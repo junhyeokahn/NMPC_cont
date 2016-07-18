@@ -6,81 +6,72 @@ m = 1;
 
 %% Setup NMPC Problem
 
-f = @(x) [-1*x(1) + 2*x(2); 
-          -3*x(1) + 4*x(2) - 0.25*(x(2)^3)];
-df = @(x) [-1, 2;
-           -3, 4-0.75*(x(2)^2)];
+f  = @(x) [-1*x(1) + 2*x(2);
+           -3*x(1) + 4*x(2) - 0.25*(x(2)^3)];
 B = [0.5;-2];
 
+df = @(x) [-1, 2;
+           -3, 4-0.75*(x(2)^2)];
 B_w = [0;1];
+
 w_max = 0.1;
 
 N_mpc = 50;
 
-alpha = 10;
 P = [7.9997, -12.2019;
     -12.2019, 27.0777];
+alpha = 10;
+
+state_constr_low = [-4.94;-4.94]; 
+ctrl_constr_low = -1.8*ones(m,1);
 
 Tp = 1.5;
-delta = 0.3; %Nominal MPC re-solve
-dt_aux = 0.1; %resolve auxiliary problem
-dt = 0.01; %implementation resolution
+delta = 0.1; %Nominal MPC re-solve
+dt_aux = 0.05; %resolve auxiliary problem
+dt = 0.005; %implementation resolution
 
-[NMPC_Prob, NMPC_Aeq,L_e] = setup_MNMPC(n,m,P,f,...
-                    B,df,N_mpc,alpha,Tp,dt,delta);
+[NMPC_Prob, NMPC_Aeq,L_e] = setup_MNMPC(n,m,f,B,df,...
+                    state_constr_low,ctrl_constr_low,...
+                    N_mpc,P,alpha,Tp,dt,delta);
 
 %% Test MPC Solve
 
 test_state = [3.5;-2.5];
-% tic
-% [NMPC_state,NMPC_ctrl,converged] = compute_NMPC(NMPC_Prob,NMPC_Aeq,...
-%     test_state,n,m,N_mpc,L_e_full);
-% toc
-% disp(converged);
-% 
-% 
-% % Visualize
-% close all
-% figure(); 
-% plot(NMPC_state(1:(delta/dt),1),...
-%      NMPC_state(1:(delta/dt),2),'r-','linewidth',2);
-% hold on
-% plot(NMPC_state(:,1),NMPC_state(:,2),'b-','linewidth',1);
-% Ellipse_plot((1/alpha)*P,[0;0],25,'r');
-% grid on
-% axis equal
-% xlabel('X'); ylabel('Y');
-% 
-% pause;
+tic
+[NMPC_state,NMPC_ctrl,x_coeff,u_coeff,converged] = ...
+    compute_MNMPC(NMPC_Prob,NMPC_Aeq,test_state,n,m,N_mpc,L_e);
+toc
+disp(converged);
 
 %% Auxiliary controller timings
 
 %Setup aux problem
-[Maux_prob] = setup_Maux(n,m,B,N_mpc);
+[Maux_prob] = setup_Maux(n,m,state_constr_low,ctrl_constr_low,...
+                         B,N_mpc);
 
 %% Set up non-linear sim
 
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
 solve_t = (0:dt:10)';
-T_steps = length(solve_t);
+T_steps = length(solve_t)-1;
 
 dt_NMPC = delta;
 solve_NMPC = (0:dt_NMPC:10)';
-T_steps_NMPC = length(solve_NMPC);
+T_steps_NMPC = length(solve_NMPC)-1;
 
-t = cell(T_steps-1,1);
+t = cell(T_steps,1);
 state_0 = test_state;
 state_0_MPC = state_0;
 
-MPC_state = cell(T_steps_NMPC-1,1);
-MPC_ctrl = cell(T_steps_NMPC-1,1);
+MPC_state = cell(T_steps_NMPC,1);
+MPC_ctrl = cell(T_steps_NMPC,1);
 
-True_state = cell(T_steps-1,1);
-True_ctrl = zeros(T_steps-1,m);
+True_state = cell(T_steps,1);
+True_ctrl = zeros(T_steps,m);
 
-opt_solved = NaN(T_steps-1,2);
-ctrl_solve_time = NaN(T_steps-1,2);
+opt_solved = NaN(T_steps,2);
+ctrl_solve_time = NaN(T_steps,2);
 
 i_mpc = 0;
 i_aux = 0;
@@ -88,7 +79,8 @@ Tf = Tp;
 u_aux = zeros((dt_aux/dt)+1,m);
 
 %% Simulate
-for i = 1:T_steps-1
+for i = 1:T_steps
+    fprintf('%d/%d \n',i,T_steps);
     %First Solve MPC
     if (mod(solve_t(i),delta)==0)
         tic
@@ -129,9 +121,10 @@ for i = 1:T_steps-1
         True_ctrl(i,:) = u_aux(i_aux_use,:);
     end
     
+    w_dist = w_max;
     %Simulate Optimal
     [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,True_ctrl(i,:)',...
-        f,B,B_w,w_max),[solve_t(i),solve_t(i+1)],state_0,ode_options);
+        f,B,B_w,w_dist),[solve_t(i),solve_t(i+1)],state_0,ode_options);
     t{i} = d_t;
     True_state{i} = d_state;
     state_0 = d_state(end,:)';    

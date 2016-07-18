@@ -1,5 +1,7 @@
-function [X, X_dot,J_opt,exitflag] = compute_geodesic_tom(Prob,...
-                                    n,N,start_p,end_p,T_e,T_dot_e,Aeq)
+function [X, X_dot,J_opt,exitflag] = ...
+    compute_geodesic_tom(Prob,n,N,...
+                    start_p,end_p,...
+                    T_e,T_dot_e,Aeq)
 
 
 beq = [start_p; end_p];
@@ -21,7 +23,7 @@ X = C_opt*T_e;
 X_dot = 2*C_opt*T_dot_e;
 
 J_opt = Result.f_k;
-exitflag = Result.Inform;
+exitflag = Result.Inform;%GOOD: {0,1,6}
 
 end
 

@@ -12,7 +12,7 @@ Prob = modify_x_0(Prob,x0,1:(N+1)*n);
 Prob = ProbCheck(Prob, 'snopt');
 Result = snoptTL(Prob);
 
-converged = ~Result.ExitFlag;
+converged = Result.Inform; %GOOD: {1,2,3}
 
 %Compute trajectories
 NMPC_state = zeros(size(L_e,2),n);

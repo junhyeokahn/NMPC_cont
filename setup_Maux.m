@@ -1,13 +1,11 @@
-function Maux_prob = setup_Maux(n,m,B,N)
+function Maux_prob = setup_Maux(n,m,x_L,u_L,B,N)
 
 %% Constants
 
 %State bounds
-x_L = -7*ones(n,1);
 x_U = -x_L;
 
 %Control bounds
-u_L = -2*ones(m,1);
 u_U = -u_L;
 
 %State cost weighting
@@ -16,19 +14,8 @@ Q = 0.5*eye(n);
 %Control cost weighting
 R = 1*eye(m);
 
-%Terminal cost matrix (P,alpha)
-
-%Order of approximation
-% N = 10;
-
 %Number of collocation points
 K = N;
-
-%MPC Solve horizon
-% Tp = 10; %tau_p: [0, Tp]
-
-%Interval
-% delta = 1; 
 
 %CGL nodes
 [s_t,w] = clencurt(K); %t_t: [-1, 1] : <-> : [0, Tp]
@@ -62,13 +49,8 @@ Maux_prob.xu_L = [kron(ones(N+1,1),x_L);
                   kron(ones(N+1,1),u_L)];
 Maux_prob.xu_U = [kron(ones(N+1,1),x_U);
                   kron(ones(N+1,1),u_U)]; 
-
-% Maux_prob.xu_L = [-Inf*ones((N+1)*n,1);
-%                    kron(ones(N+1,1),u_L)];
-% Maux_prob.xu_U = [Inf*ones((N+1)*n,1);
-%                    kron(ones(N+1,1),u_U)];    
+  
 Maux_prob.Aeq = [eye(n), zeros(n,N*n+(N+1)*m)];
-
 
 
 end

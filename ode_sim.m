@@ -1,5 +1,5 @@
-function dx_dot = ode_sim(t,x,u,f,B,B_w,w_max)
+function dx_dot = ode_sim(t,x,u,f,B,B_w,w)
 
-dx_dot = f(x) + B*u + B_w*w_max;%*cos((2*pi/1)*t + 0.13);
+dx_dot = f(x) + B*u + B_w*w;
 
 end
