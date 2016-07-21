@@ -8,7 +8,7 @@ m = 2;
 %% Generate desired trajectory
 
 T = 2*pi*20;
-dt = 50e-3;
+dt = 0.005;
 t = (0:dt:T)';
 
 x_d = sin(t/10);
@@ -64,7 +64,8 @@ pause;
 
 %% Setup aux controller and dynamics
 
-aux_prob = setup_opt_aux(m);
+eps_u = 0.2;
+aux_prob = setup_opt_aux(m,eps_u);
 geo_Ke = 1;
 
 f = @(x) [x(3)*cos(x(4));
@@ -114,6 +115,8 @@ solved = ones(T_steps,1);
 
 E = zeros(T_steps,1);
 
+u_prev = zeros(m,1);
+
 for i = 1:T_steps
     
 %     fprintf('%d/%d \n',i, T_steps);
@@ -129,17 +132,18 @@ for i = 1:T_steps
     E(i) = (xi_act - xi_nom)'*M_ccm*(xi_act - xi_nom);
     
     [aux, solved(i)] = compute_opt_aux(aux_prob,geo_Ke,...
-                            X,X_dot,E(i),W,f,B,u_nom,lambda);
+                            X,X_dot,E(i),W,f,B,u_nom,u_prev,eps_u,lambda);
     aux_ctrl(i,:) = aux';
     
     ctrl(i,:) = u_nom' + aux';%zeros(1,m);
-%     ctrl(i,2) = sign(ctrl(i,2))*min(0.15,abs(ctrl(i,2)));
+    u_prev = ctrl(i,:)';
     
-    [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,ctrl(i,:)',f,B,B_w,w_dist),...
-        [t(i),t(i+1)],x_act(i,:),ode_options);
-    t_opt{i} = d_t;
-    state{i} = d_state;
-    x_act(i+1,:) = d_state(end,:);
+%     [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,ctrl(i,:)',f,B,B_w,w_dist),...
+%         [t(i),t(i+1)],x_act(i,:),ode_options);
+%     t_opt{i} = d_t;
+%     state{i} = d_state;
+%     x_act(i+1,:) = d_state(end,:);
+    x_act(i+1,:) = x_act(i,:)+(f(x_act(i,:)') + B*ctrl(i,:)' + B_w*w_dist)'*dt;
     
 end
 

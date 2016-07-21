@@ -1,4 +1,4 @@
-function plot_car_movie(x_des,y_des,t,x_act)
+function plot_car_movie(x_des,y_des,t,x_act,t_step)
 
 
 tri_bound = [[0.2;0],0.1*[cosd(-120);sind(-120)],0.1*[cosd(120);sind(120)]];
@@ -31,7 +31,7 @@ grid on;
 
 axis manual;
 
-for i = 4:4:length(t)
+for i = t_step:t_step:length(t)
     
     tri_p = tri_bound;
     R = [cos(x_act(i,4)), sin(x_act(i,4));
@@ -44,8 +44,9 @@ for i = 4:4:length(t)
     set(hp,'XData',tri_p(1,:),'YData',tri_p(2,:));
     hold off;
     
-   
+    title(sprintf('t = %.2f',t(i)));
     drawnow;
+       
     
 end
 end
