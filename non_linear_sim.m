@@ -16,8 +16,8 @@ geodesic_N = 4;
         setup_geodesic_calc(n,geodesic_N,W,dW);
 
 %% Setup Auxiliary controller
-Q = kron(geo_we',eye(m)); 
-Q_bar = Q'*Q;
+% Q = kron(geo_we',eye(m)); 
+% Q_bar = Q'*Q;
 aux_Prob = setup_opt_aux(m);
 
 %% Test Auxiliary control computation
@@ -43,7 +43,7 @@ for k = 1:geo_Ke+1
     Eps = Eps + (1/2)*geo_we(k)*(abs(e_k-J_opt)/J_opt);
 end
 
-disp('Exit flag'); disp(exitflag);
+disp('Converged'); disp(converged_geo);
 disp('Eps'); disp(Eps);
 
 %Numerics for optimal differential controller
@@ -52,14 +52,16 @@ f  = @(x) [-1*x(1) + 2*x(2);
            -3*x(1) + 4*x(2) - 0.25*(x(2)^3)];
 B = [0.5;-2];
 B_w = [0;1];
-w_dist = 0;
+w_max = 0;
+
+lambda =  1.742857142857143;
 
 df = @(x) [-1, 2;
            -3, 4-0.75*(x(2)^2)];
 
 tic
 [~,converged_aux] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
-                            W,f,B,start_p,lambda);
+                            W,f,B,zeros(m,1),lambda);
 toc;
 disp(converged_aux);
 
@@ -121,8 +123,8 @@ for i = 1:T_steps
     ctrl_solve_time(i,1) = toc;
     
     tic
-    [ctrl_opt(i,:),solved(i,2)] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
-                            W,f,B,start_p,lambda);
+    [ctrl_opt(i,:),solved(i,2)] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt(i),...
+                            W,f,B,zeros(m,1),lambda);
     ctrl_solve_time(i,2) = toc;
     
     %Standard control
@@ -131,6 +133,8 @@ for i = 1:T_steps
             T_e,T_dot_e,geo_Aeq);
     ctrl_s(i,:) = aux_control(rho,X_s,X_dot_s,geo_Ke,geo_we,...
         B,W,m);
+    
+    w_dist = w_max;
     
     %Simulate Optimal
     [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,ctrl_opt(i,:)',f,B,B_w,w_dist),...
@@ -173,8 +177,8 @@ xlabel('Time [s]');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 figure()
-stairs(solve_t,ctrl_s,'r-','linewidth',2); hold on
-stairs(solve_t,ctrl_opt,'b-','linewidth',2);
+stairs(solve_t(1:end-1),ctrl_s,'r-','linewidth',2); hold on
+stairs(solve_t(1:end-1),ctrl_opt,'b-','linewidth',2);
 xlabel('Time [s]');
 ylabel('u(t)'); legend('\rho-multiplier','Optimized control');
 grid on

@@ -7,7 +7,7 @@ Name = 'Aux Problem';
 
 aux_Prob = qpAssign(eye(m),zeros(1,m),ones(1,m),...
          -Inf,0,[],[],...
-         0,Name);
+         zeros(m,1),Name);
        
 
 

@@ -36,7 +36,7 @@ dt = 0.005; %implementation resolution
 
 %% Test MPC Solve
 
-test_state = [3.5;-2.5];
+test_state = [3.4;-2.4];
 tic
 [NMPC_state,NMPC_ctrl,x_coeff,u_coeff,converged] = ...
     compute_MNMPC(NMPC_Prob,NMPC_Aeq,test_state,n,m,N_mpc,L_e);
@@ -137,7 +137,7 @@ close all
 % State Trajectory
 figure()
 hold on
-for i = 1:T_steps-1
+for i = 1:T_steps
     plot(t{i},True_state{i}(:,1),'r-','linewidth',2);
     plot(t{i},True_state{i}(:,2),'b-','linewidth',2);
 end
@@ -155,12 +155,12 @@ grid on
 
 %2D State Plot
 figure()
-for i_mpc = 1:T_steps_NMPC-1
+for i_mpc = 1:T_steps_NMPC
     plot(MPC_state{i_mpc}(:,1),...
          MPC_state{i_mpc}(:,2),'r-','linewidth',2);
       hold on;
 end
-for i = 1:T_steps-1
+for i = 1:T_steps
     plot(True_state{i}(:,1),...
           True_state{i}(:,2),'b-','linewidth',2);    
 end
@@ -188,5 +188,9 @@ grid on
 legend('NMPC','Ancillary MPC');
 xlabel('Time [s]');
 title('Convergence');
+
+%%
+
+save('NMPC_mayne_run.mat');
 
   

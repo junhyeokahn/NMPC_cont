@@ -4,6 +4,7 @@ yalmip('clear');
 %% Allgower
 
 lambda_range = 1.742857142857143;
+% lambda_range = 1.77;
 % cond =1.000207519531250;
 % lambda_range = linspace(0.8,2,15);
 bounds = nan(15,1);
@@ -207,6 +208,14 @@ M = W_sol\eye(2);
 alpha = max(eig(M));
 w = 0.1;
 d_bar = sqrt(alpha)*w/lambda;
+
+%Compare RCI sets
+P_rci = diag([39.0251, 486.0402]);
+
+figure()
+Ellipse_plot(M*(1/d_bar^2),[0;0],20,'k');
+Ellipse_plot(P_rci,[0;0],20,'r');
+
 L = chol(W_sol);
 F = df*W_sol + W_sol*df' + 2*lambda*W_sol;
 

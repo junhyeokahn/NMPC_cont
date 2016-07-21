@@ -9,10 +9,10 @@ x_U = -x_L;
 u_U = -u_L;
 
 %State cost weighting
-Q = 0.5*eye(n);
+Q = 2*0.5*eye(n);
 
 %Control cost weighting
-R = 1*eye(m);
+R = 2*1*eye(m);
 
 %Number of collocation points
 K = N;

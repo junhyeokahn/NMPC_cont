@@ -6,14 +6,14 @@ m = 1;
 
 %% Setup Geodesic Numerics
 
-W = @(x) [4.258279173109496,  -0.934234854771844;
-        -0.934234854771844,   3.766923169705589];
-dW = @(x){zeros(2), zeros(2)};
-
-geodesic_N = 4;
-
-[geo_Prob,geo_Ke,geo_we,T_e,T_dot_e,geo_Aeq] = ...
-        setup_geodesic_calc(n,geodesic_N,W,dW);
+% W = @(x) [4.258279173109496,  -0.934234854771844;
+%         -0.934234854771844,   3.766923169705589];
+% dW = @(x){zeros(2), zeros(2)};
+% 
+% geodesic_N = 4;
+% 
+% [geo_Prob,geo_Ke,geo_we,T_e,T_dot_e,geo_Aeq] = ...
+%         setup_geodesic_calc(n,geodesic_N,W,dW);
 
 %Assemble geodesic struct for MPC
 % geodesic_MPC = struct('geo_Prob',geo_Prob,'geodesic_N',geodesic_N,'T_e',T_e,'T_dot_e',T_dot_e,...
@@ -31,9 +31,12 @@ B_w = [0;1];
 
 w_max = 0.1;
 
-M_ccm = W(0)\eye(2);
+% M_ccm = W(0)\eye(2);
 lambda =  1.742857142857143;
-d_bar = (w_max*sqrt(max(eig(M_ccm)))/lambda);
+% d_bar = (w_max*sqrt(max(eig(M_ccm)))/lambda);
+
+M_ccm = diag([39.0251, 486.0402]);
+d_bar = 1;
 
 N_mpc = 50;
 
@@ -46,7 +49,8 @@ delta = 0.1;
 dt = 0.005;
 
 state_constr_low = [-4.94;-4.94]; 
-ctrl_constr_low = -1.8*ones(m,1);
+ctrl_constr_low = -1.793*ones(m,1);
+% ctrl_constr_low = -1.15*ones(m,1);
 
 x_eq = [0;0];
 
@@ -58,7 +62,7 @@ x_eq = [0;0];
 
 %% Test MPC Solve
 
-test_state = [3.5;-2.5];
+test_state = [3.4;-2.4];
 tic
 [NMPC_state,NMPC_ctrl,converged_MPC] = compute_NMPC(NMPC_Prob,...
     test_state,test_state,state_constr_low,x_eq,...
@@ -88,23 +92,24 @@ pause;
 
 %% Test Geodesic Numerics
 
-tic
-[X, X_dot,J_opt,converged_geo] = ...
-    compute_geodesic_tom(geo_Prob,n,geodesic_N,...
-            NMPC_state(1,:)',test_state,...
-            T_e,T_dot_e,geo_Aeq);
-toc;
-disp(converged_geo);
+% tic
+% [X, X_dot,J_opt,converged_geo] = ...
+%     compute_geodesic_tom(geo_Prob,n,geodesic_N,...
+%             NMPC_state(1,:)',test_state,...
+%             T_e,T_dot_e,geo_Aeq);
+% toc;
+% disp(converged_geo);
 
                 
 %% Setup Auxiliary controller
-aux_Prob = setup_opt_aux(m);
-
-tic
-[ctrl_opt,converged_aux] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
-                            W,f,B,NMPC_ctrl(1,:)',lambda);
-toc;
-disp(converged_aux);
+% aux_Prob = setup_opt_aux(m);
+% 
+% tic
+% [ctrl_opt,converged_aux] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
+%                             W,f,B,NMPC_ctrl(1,:)',lambda);
+% toc;
+% disp(converged_aux);
+% pause;
 %% Set up non-linear sim
 
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
@@ -183,17 +188,18 @@ for i = 1:T_steps
     
     %Optimal Control
     tic
-    [X, X_dot,J_opt,opt_solved(i,2)] = compute_geodesic_tom(geo_Prob,...
-    n,geodesic_N,x_nom',state_0,T_e,T_dot_e,geo_Aeq);
-    ctrl_solve_time(i,2) = toc;
+%     [X, X_dot,J_opt,opt_solved(i,2)] = compute_geodesic_tom(geo_Prob,...
+%     n,geodesic_N,x_nom',state_0,T_e,T_dot_e,geo_Aeq);
+%     ctrl_solve_time(i,2) = toc;
+%     
+%     Geod{i} = X';
+    geo_energy(i,1) = (state_0-x_nom')'*M_ccm*(state_0-x_nom');
     
-    Geod{i} = X';
-    geo_energy(i,1) = J_opt;
-    
-    tic
-    [Aux_ctrl(i,:),opt_solved(i,3)] = compute_opt_aux(aux_Prob,geo_Ke,...
-        X,X_dot,J_opt,W,f,B,u_nom,lambda);
-    ctrl_solve_time(i,3) = toc;   
+%     tic
+%     [Aux_ctrl(i,:),opt_solved(i,3)] = compute_opt_aux(aux_Prob,geo_Ke,...
+%         X,X_dot,J_opt,W,f,B,u_nom,lambda);
+%     ctrl_solve_time(i,3) = toc;   
+    Aux_ctrl(i,:) = ([-1.3696, 5.1273]*(state_0-x_nom'))';
     
     True_ctrl(i,:) = u_nom+Aux_ctrl(i,:);
 
@@ -294,7 +300,7 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 %%
 
-save('NMPC_allgower_run.mat');
+save('NMPC_allgower_alg_run.mat');
 
 
 
