@@ -91,7 +91,7 @@ phi_d = @(x) [1, zeros(1,3);
               0, 1, zeros(1,2);              
               0, 0, sin(x(4)),  x(3)*cos(x(4))];
 
-W = @(x) (phi_d(x)\W_ccm)*(phi_d(x)\eye(n))';
+M = @(x) M_ccm*phi_d(x);
 
 
 %% Simulate
@@ -127,12 +127,13 @@ for i = 1:T_steps
     xi_nom = phi(x_nom);
     xi_act = phi(x_act(i,:)');
     
-    X_dot = geo_map(x_nom,x_act(i,:)',xi_nom,xi_act,phi_d,n);
+%     X_dot = geo_map(x_nom,x_act(i,:)',xi_nom,xi_act,phi_d,n);
+    X_dot = kron(ones(1,2),xi_act-xi_nom);
     X = [x_nom, x_act(i,:)'];
     E(i) = (xi_act - xi_nom)'*M_ccm*(xi_act - xi_nom);
     
-    [aux, solved(i)] = compute_opt_aux(aux_prob,geo_Ke,...
-                            X,X_dot,E(i),W,f,B,u_nom,u_prev,eps_u,lambda);
+    [aux, solved(i)] = compute_opt_aux_FL(aux_prob,geo_Ke,...
+                            X,X_dot,E(i),M,f,B,u_nom,u_prev,eps_u,lambda);
     aux_ctrl(i,:) = aux';
     
     ctrl(i,:) = u_nom' + aux';%zeros(1,m);

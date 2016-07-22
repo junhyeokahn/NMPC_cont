@@ -17,6 +17,7 @@ Prob = ProbCheck(Prob, 'qpopt');
 Result = qpoptTL(Prob);
 u_aux = Result.x_k;
 
+
 %%
 converged = Result.Inform; %GOOD: 0
 
