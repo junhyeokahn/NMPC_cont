@@ -29,12 +29,7 @@ zb_des = -thrust_des/norm(thrust_des);
 yaw_des = x_nom(9);
 pitch_des = atan2(zb_des(1)*cos(yaw_des) + zb_des(2)*sin(yaw_des),...
                    zb_des(3));
-xb_des = [cos(pitch_des)*cos(yaw_des);
-          cos(pitch_des)*sin(yaw_des);
-          -sin(pitch_des)];
-yb_des = cross(zb_des,xb_des);
-
-R_des = [xb_des,yb_des,zb_des];              
+roll_des = 
 
 
 thrust = thrust_des'*(R*[0;0;-1]);

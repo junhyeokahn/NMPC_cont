@@ -109,4 +109,7 @@ ylabel('Traj errors');
 legend('e_x','e_y','e_z');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
+%% Animate
+
+plot_quad_movie(state_nom(:,1),state_nom(:,2),state_nom(:,3),t,x_act,20,n)
 
