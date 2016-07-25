@@ -16,9 +16,15 @@ Prob = modify_c(Prob,2*eps_u*(u_nom-u_prev));
 Prob = ProbCheck(Prob, 'qpopt');
 Result = qpoptTL(Prob);
 u_aux = Result.x_k;
-
-
-%%
 converged = Result.Inform; %GOOD: 0
+
+% a = -u_b;
+% b = A';
+% if (norm(b)==0) || (a <= 0)
+%     u_aux = zeros(4,1);
+% else
+%     u_aux = -(a/(b'*b))*b;
+% end
+% converged = 0;
 
 end
