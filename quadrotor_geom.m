@@ -17,7 +17,7 @@ T = 20;
 dt = 0.001;
 t = (0:dt:T)';
 
-[state_nom, ctrl_nom, ang_a] = generate_quad_traj(t,Jq,mq,g);
+[state_nom, ctrl_nom, ang_a, accel] = generate_quad_traj(t,Jq,mq,g);
 
 ctrl_nom = [state_nom(:,7), ctrl_nom(:,2:4)];
 state_nom = [state_nom(:,1:6), state_nom(:,9:14)];

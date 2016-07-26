@@ -50,7 +50,7 @@ torque = -kR*eR - k_om*e_om + Skew(om)*Jq*om -...
          Jq*(Skew(om)*R'*R_des*om_des - R'*R_des*om_d_nom);
      
 u = [thrust; torque];     
-w_dist = u_nom.*[0;0.1*ones(3,1)];
+w_dist = u_nom.*[0;0.5*ones(3,1)];
 w = w_dist;
 dx_dot = f(x) + B(x)*u + B_w(x)*w;
 

@@ -13,11 +13,11 @@ g = 9.81;
 
 %% Generate desired trajectory
 
-T = 10;
-dt = 0.001;
+T = 20;
+dt = 0.005;
 t = (0:dt:T)';
 
-[state_nom, ctrl_nom, ang_a] = generate_quad_traj(t,Jq,mq,g);
+[state_nom, ctrl_nom, ang_a, accel] = generate_quad_traj(t,Jq,mq,g);
 
 %Plotting
 figure()
@@ -88,7 +88,7 @@ pause;
 
 %% Setup aux controller and dynamics
 
-eps_u = 0.1;
+eps_u = 0;
 aux_prob = setup_opt_aux(m,eps_u);
 geo_Ke = 1;
 
@@ -127,7 +127,7 @@ B_w = B;
 w_max = max(norms(0.1*ctrl_nom(:,2:4),2,2));
 sigma_Bw = sqrt(max(eig(B_w'*B_w)));
 d_bar = sigma_Bw*w_max*sqrt(max(eig(M_ccm)))/lambda;
-% euc_bound = d_bar/sqrt(min(eig(M_ccm)));
+euc_bound = d_bar/sqrt(min(eig(M_ccm)));
 
 %% Setup geodesic mapping
 
@@ -165,23 +165,22 @@ M = @(x) M_ccm*phi_d(x);
 
 %% Continuous Simulation
 
-ode_options = odeset('RelTol', 1e-4, 'AbsTol', 1e-7);
+% ode_options = odeset('RelTol', 1e-4, 'AbsTol', 1e-7);
 start_p = state_nom(1,:);
 
 % [t_vec,x_act] = ode45(@(t_vec,x_act)quad_sim_cont(t_vec,x_act,...
-%         t,state_nom,ctrl_nom,phi,M_ccm,M,lambda,f,B,B_w,w_dist),...
-%         t,start_p,ode_options);
+%         t,state_nom,ctrl_nom,phi,M_ccm,M,lambda,f,B,B_w,w_max),...
+%         t,start_p);
 
 %% Discrete Simulation
 
 T_steps = length(t)-1;
 
 t_opt = cell(T_steps,1);
+state = cell(T_steps,1);
 
 x_act = zeros(T_steps+1,n);
 x_act(1,:) = start_p;
-
-state = cell(T_steps,1);
 
 ctrl = zeros(T_steps,m);
 aux_ctrl = zeros(T_steps,m);
@@ -214,6 +213,11 @@ for i = 1:T_steps
     u_prev = ctrl(i,:)';
     
     w_dist = u_nom.*[0;0.1*ones(3,1)];
+%     [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,ctrl(i,:)',f,B,B_w,w_dist),...
+%     [t(i),t(i+1)],x_act(i,:),ode_options);
+%     t_opt{i} = d_t;
+%     state{i} = d_state;
+%     x_act(i+1,:) = d_state(end,:);
     x_act(i+1,:) = x_act(i,:)+(f(x_act(i,:)') + B*ctrl(i,:)' + B_w*w_dist)'*dt;
     
 end
@@ -244,7 +248,7 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 %Control effort
 figure()
-subplot(3,1,1)
+subplot(2,1,1)
 plot(t(1:end-1),ctrl_nom(1:end-1,1),'r-','linewidth',2); hold on
 plot(t(1:end-1),ctrl(:,1),'b-','linewidth',2);
 xlabel('Time [s]');
@@ -253,7 +257,7 @@ grid on
 legend('nominal','net');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
-subplot(3,1,2)
+subplot(2,1,2)
 plot(t,state_nom(:,7),'r-','linewidth',2); hold on
 plot(t,x_act(:,7),'b-','linewidth',2);
 xlabel('Time [s]');
@@ -262,14 +266,30 @@ grid on
 legend('nominal','net');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
-subplot(3,1,3)
-plot(t(1:end-1),ctrl_nom(1:end-1,2:4),'-','linewidth',2); hold on
-plot(t(1:end-1),ctrl(:,2:4),'--','linewidth',2);
+figure()
+subplot(3,1,1)
+plot(t(1:end-1),ctrl_nom(1:end-1,2),'-','linewidth',2); hold on
+plot(t(1:end-1),ctrl(:,2),'--','linewidth',2);
 xlabel('Time [s]'); 
 ylabel('Torque [Nm]'); 
 grid on
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
+subplot(3,1,2)
+plot(t(1:end-1),ctrl_nom(1:end-1,3),'-','linewidth',2); hold on
+plot(t(1:end-1),ctrl(:,3),'--','linewidth',2);
+xlabel('Time [s]'); 
+ylabel('Torque [Nm]'); 
+grid on
+set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+
+subplot(3,1,3)
+plot(t(1:end-1),ctrl_nom(1:end-1,4),'-','linewidth',2); hold on
+plot(t(1:end-1),ctrl(:,4),'--','linewidth',2);
+xlabel('Time [s]'); 
+ylabel('Torque [Nm]'); 
+grid on
+set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 % Geodesic Energy
 figure()
@@ -290,5 +310,5 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 %% Animate
 
-plot_quad_movie(state_nom(:,1),state_nom(:,2),state_nom(:,3),t,x_act,20,n)
+plot_quad_movie(state_nom(:,1),state_nom(:,2),state_nom(:,3),t,x_act,5,n)
 

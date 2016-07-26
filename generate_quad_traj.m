@@ -1,7 +1,7 @@
-function [x_nom, u_nom, ang_accel] = generate_quad_traj(t,Jq,mq,g)
+function [x_nom, u_nom, ang_accel, accel] = generate_quad_traj(t,Jq,mq,g)
 
 %% Parabola
-% om = 2*pi*(1/4);
+om = 2*pi*0.2;
 % x_d = cos(om*t);
 % y_d = zeros(length(t),1);
 % z_d = -sin(om*t);
@@ -29,15 +29,16 @@ function [x_nom, u_nom, ang_accel] = generate_quad_traj(t,Jq,mq,g)
 % sz_d =-(om^4)*sin(om*t);
 
 %% Helix
-om = 2*pi*0.2;
 x_d = sin(om*t);
 y_d = cos(om*t);
-z_d = -0.1*t;
+% z_d = -0.1*t;
+z_d = zeros(length(t),1);
 yaw_d = zeros(length(t),1);
 
 vx_d = om*cos(om*t);
 vy_d = -om*sin(om*t);
-vz_d = -0.1*ones(length(t),1);
+% vz_d = -0.1*ones(length(t),1);
+vz_d = zeros(length(t),1);
 yd_d = zeros(length(t),1);
 
 ax_d = -(om^2)*sin(om*t);
@@ -123,5 +124,7 @@ for i = 1:length(t)
    u_nom(i,:) = [thrust_dd, torque'];      
     
 end
+
+accel = [ax_d,ay_d,az_d];
 
 end
