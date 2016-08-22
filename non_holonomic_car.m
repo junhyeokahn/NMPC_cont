@@ -8,7 +8,7 @@ m = 2;
 %% Generate desired trajectory
 
 T = 2*pi*20;
-dt = 0.005;
+dt = 0.01;
 t = (0:dt:T)';
 
 x_d = sin(t/10);
@@ -74,7 +74,7 @@ f = @(x) [x(3)*cos(x(4));
           0];
 B = [zeros(2);eye(2)];
 B_w = [zeros(2);eye(2)];
-w_dist = 0.01*ones(2,1);
+w_dist = 0.0*ones(2,1);
 
 d_bar = norm(w_dist)*sqrt(max(eig(M_ccm)))/lambda;
 euc_bound = d_bar/sqrt(min(eig(M_ccm)));
@@ -219,7 +219,7 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 %%
 
-save('car.mat','x_d','y_d','t','x_act');
-
+% save('car.mat','x_d','y_d','t','x_act');
+plot_car_movie(x_d,y_d,t,x_act,10)
 
 

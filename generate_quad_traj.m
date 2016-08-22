@@ -1,7 +1,36 @@
 function [x_nom, u_nom, ang_accel, accel] = generate_quad_traj(t,Jq,mq,g)
+om = 2*pi*0.25;
 
-%% Parabola
-om = 2*pi*0.2;
+%% Figure 8
+
+x_d = cos(om*t);
+y_d = 0.5*sin(2*om*t);
+z_d = zeros(length(t),1);
+yaw_d = 2*pi*sin(0.2*om*t);
+% yaw_d = zeros(length(t),1);
+
+vx_d = -om*sin(om*t);
+vy_d =  om*cos(2*om*t);
+vz_d = zeros(length(t),1);
+yd_d = 0.2*2*pi*om*cos(om*t);
+% yd_d = zeros(length(t),1);
+ 
+ax_d = -(om^2)*cos(om*t);
+ay_d = -2*(om^2)*sin(2*om*t);
+az_d =  zeros(length(t),1);
+ydd_d = -0.2*0.2*2*pi*(om^2)*sin(om*t);
+% ydd_d = zeros(length(t),1);
+ 
+jx_d =  (om^3)*sin(om*t);
+jy_d = -4*(om^3)*cos(2*om*t);
+jz_d =  zeros(length(t),1);
+
+sx_d = (om^4)*cos(om*t);
+sy_d = 8*(om^4)*sin(om*t);
+sz_d = zeros(length(t),1);
+
+%% Circle
+
 % x_d = cos(om*t);
 % y_d = zeros(length(t),1);
 % z_d = -sin(om*t);
@@ -29,30 +58,30 @@ om = 2*pi*0.2;
 % sz_d =-(om^4)*sin(om*t);
 
 %% Helix
-x_d = sin(om*t);
-y_d = cos(om*t);
+% x_d = sin(om*t);
+% y_d = cos(om*t);
 % z_d = -0.1*t;
-z_d = zeros(length(t),1);
-yaw_d = zeros(length(t),1);
-
-vx_d = om*cos(om*t);
-vy_d = -om*sin(om*t);
-% vz_d = -0.1*ones(length(t),1);
-vz_d = zeros(length(t),1);
-yd_d = zeros(length(t),1);
-
-ax_d = -(om^2)*sin(om*t);
-ay_d = -(om^2)*cos(om*t);
-az_d = zeros(length(t),1);
-ydd_d = zeros(length(t),1);
-
-jx_d = -(om^3)*cos(om*t);
-jy_d =  (om^3)*sin(om*t);
-jz_d = zeros(length(t),1);
-
-sx_d = (om^4)*sin(om*t);
-sy_d = (om^4)*cos(om*t);
-sz_d = zeros(length(t),1);
+% z_d = zeros(length(t),1);
+% yaw_d = zeros(length(t),1);
+% 
+% vx_d = om*cos(om*t);
+% vy_d = -om*sin(om*t);
+% % vz_d = -0.1*ones(length(t),1);
+% vz_d = zeros(length(t),1);
+% yd_d = zeros(length(t),1);
+% 
+% ax_d = -(om^2)*sin(om*t);
+% ay_d = -(om^2)*cos(om*t);
+% az_d = zeros(length(t),1);
+% ydd_d = zeros(length(t),1);
+% 
+% jx_d = -(om^3)*cos(om*t);
+% jy_d =  (om^3)*sin(om*t);
+% jz_d = zeros(length(t),1);
+% 
+% sx_d = (om^4)*sin(om*t);
+% sy_d = (om^4)*cos(om*t);
+% sz_d = zeros(length(t),1);
 
 %% Plot
 figure()
@@ -73,8 +102,8 @@ x_nom(:,1:6) = [x_d,y_d,z_d,vx_d,vy_d,vz_d];
 x_nom(:,11) = yaw_d;
 
 for i = 1:length(t)
-   th_vect = -[ax_d(i);ay_d(i);az_d(i)-g];
-   zb_ax = th_vect/norm(th_vect);
+   th_vect = [ax_d(i);ay_d(i);az_d(i)-g];
+   zb_ax = -th_vect/norm(th_vect);
    
    thrust = mq*norm(th_vect);
    thrust_d = -mq*(zb_ax'*[jx_d(i);jy_d(i);jz_d(i)]);

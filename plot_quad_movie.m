@@ -80,7 +80,6 @@ for i = t_step:t_step:length(t)
     
     title(sprintf('t = %.2f',t(i)));
     drawnow;
-       
     
 end
 end
