@@ -1,9 +1,9 @@
-function [NMPC_Prob,L_e,L_e_full] = ...
+function [NMPC_Prob,L_e,L_e_full,s_t] = ...
     setup_NMPC(n,m,...
-               f,B,df,x_L,u_L,...
+               f,B,df,x_L,u_con,...
                N,Tp,delta,dt,...
-               P,alpha,M,RPI_bound,...
-               x_eq)
+               P,alpha,geo_MPC,RPI_bound,...
+               x_eq,u_eq,obs)
 
 %% Constants
 
@@ -11,13 +11,14 @@ function [NMPC_Prob,L_e,L_e_full] = ...
 x_U = -x_L;
 
 %Control bounds
-u_U = -u_L;
+u_L = u_con(:,1);
+u_U = u_con(:,2);
 
 %State cost weighting
-Q = diag([0.5,0.5]);
+Q = diag([1;1;1;1;1;2]);
 
 %Control cost weighting
-R = 1*eye(m);
+R = 0.5*eye(m);
 
 %Number of collocation points
 K = N;
@@ -52,15 +53,14 @@ D = kron(D,eye(n));
 
 %% Define problem
 
-% x_eq = [0;0;0.2;0];
-u_eq = zeros(m,1);
+% u_eq = zeros(m,1);
 
 x_eq_all = kron(ones(N+1,1),x_eq);
 u_eq_all = kron(ones(N+1,1),u_eq);
 
 xu_eq = [x_eq_all;u_eq_all];
 
-Q_bar = kron(diag([w(1:end-1);0]),Q); R_bar = kron(diag(w),R);
+Q_bar = kron(diag(w),Q); R_bar = kron(diag(w),R);
 Q_tilde = Q_bar + kron(diag([zeros(N,1);(2/Tp)]),P);
 
 F = blkdiag(Q_tilde,R_bar);
@@ -75,6 +75,7 @@ xu_U = [kron(ones(N+1,1),x_U);
        
 MPC_cost = @(xu) (Tp/2)*(xu-xu_eq)'*F*(xu-xu_eq) ;
 MPC_grad = @(xu) Tp*F*(xu-xu_eq);
+MPC_hess = @(xu) Tp*F;
 
 c_L = zeros(n*(N+1)+2,1);
 c_U = [zeros(n*(N+1),1);RPI_bound;alpha];
@@ -101,9 +102,9 @@ NMPC_Prob.user.df = df;
 NMPC_Prob.user.B_full = B_full;
 NMPC_Prob.user.Tp = Tp;
 NMPC_Prob.user.P = P;
-NMPC_Prob.user.M = M;
+% NMPC_Prob.user.M = M;
 % NMPC_Prob.user.W = W;
-% NMPC_Prob.user.geo_MPC = geo_MPC;
+NMPC_Prob.user.geo_MPC = geo_MPC;
 NMPC_Prob.user.x_eq = x_eq;
 
 end

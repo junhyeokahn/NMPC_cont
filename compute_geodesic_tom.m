@@ -14,6 +14,9 @@ end
 
 Prob = replace_A(Prob,Aeq,beq,beq); 
 Prob = modify_x_0(Prob,vars_0);
+% Prob.user.W_fnc = W;
+% Prob.user.dW_fnc = dW;
+
 Prob = ProbCheck(Prob, 'npsol');
 
 Result = npsolTL(Prob);

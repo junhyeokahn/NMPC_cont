@@ -1,5 +1,9 @@
 function J = Geodesic_cost_tom(vars,w,n,K,W_fnc,Phi,Phi_dot)
 
+% K = Prob.user.K;
+% n = Prob.user.n;
+% w = Prob.user.w;
+
 J = 0;
 
 for k = 1:K+1 %0 ---> K

@@ -4,7 +4,7 @@ n = Prob.user.n;
 N = Prob.user.N;
 m = Prob.user.m;
 
-% global US_A;
+global US_A;
 
 conJ = zeros(n*(N+1)+2,(n+m)*(N+1));
 
@@ -19,10 +19,10 @@ conJ(1:n*(N+1),n*(N+1)+1:end) = -Prob.user.B_full;
 
 % conJ(end-1,1:n) = NaN;
 
-% M = (Prob.user.W(xu(1:n)))\eye(n);
-% conJ(end-1,1:n) = -2*US_A'*M;
+M = (Prob.user.geo_MPC.W(xu(1:n)))\eye(n);
+conJ(end-1,1:n) = -2*US_A'*M;
 
-conJ(end-1,1:n) = -2*(Prob.user.M*(Prob.user.x_act - xu(1:n)))';
+% conJ(end-1,1:n) = -2*(Prob.user.M*(Prob.user.x_act - xu(1:n)))';
 
 %% Terminal constraint
 conJ(end,n*N+1:n*(N+1)) = 2*(Prob.user.P*(xu(n*N+1:n*(N+1))-Prob.user.x_eq))';

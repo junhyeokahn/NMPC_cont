@@ -1,5 +1,11 @@
 function GradObj = Geodesic_grad(vars,w,K,N,n,T,W_fnc,dW_fnc,Phi,Phi_dot)
 
+% K = Prob.user.K;
+% n = Prob.user.n;
+% T = Prob.user.T;
+% w = Prob.user.w;
+% N = Prob.user.N;
+
 GradObj = zeros(n*(N+1),1);
 I = eye(n);
 

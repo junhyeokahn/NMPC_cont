@@ -1,5 +1,5 @@
 function dx_dot = quad_sim_geom(t,x,...
-    t_vec,state_nom,ctrl_nom,ang_a,f,B,B_w,w)
+    t_vec,state_nom,ctrl_nom,ang_a,f,B,B_w,w_ratio)
 
 x_nom = interp1(t_vec,state_nom,t); x_nom = x_nom';
 u_nom = interp1(t_vec,ctrl_nom,t); u_nom = u_nom';
@@ -50,8 +50,9 @@ torque = -kR*eR - k_om*e_om + Skew(om)*Jq*om -...
          Jq*(Skew(om)*R'*R_des*om_des - R'*R_des*om_d_nom);
      
 u = [thrust; torque];     
-w_dist = u_nom.*[0;0.5*ones(3,1)];
-w = w_dist;
-dx_dot = f(x) + B(x)*u + B_w(x)*w;
+
+w_dist = u_nom.*[0;w_ratio*ones(3,1)];
+
+dx_dot = f(x) + B(x)*u + B_w(x)*w_dist;
 
 end

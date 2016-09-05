@@ -25,7 +25,7 @@ J = 1;
 b = 1;
 
 x1_lim = pi; %link angle
-x2_lim = pi; %link rate
+x2_lim = 5; %link rate
 x3_lim = pi; %rotor angle
 % x4_lim = pi; %rotor rate
 
@@ -33,15 +33,16 @@ x3_lim = pi; %rotor angle
 
 % lambda_range = linspace(0.1,4.0,13);
 % lambda_range = (1/100)*round(lambda_range*100);
+% lambda_range = 2.5;
 % euc_bounds = NaN(length(lambda_range),1);
 % d_bars = NaN(length(lambda_range),1);
 % cond_bound = NaN(length(lambda_range),1);
 % 
 % eps = 1;
-% condn_prev = 100;
+% condn_prev = 350;
 % return_metric = 0;
 % 
-% for ll = 11:length(lambda_range)
+% for ll = 1:length(lambda_range)
 %     lambda = lambda_range(ll);
 %     
 %     fprintf('**********\n');
@@ -53,7 +54,7 @@ x3_lim = pi; %rotor angle
 %     cond_u = 1.2*condn_prev;
 %     while (~solved) 
 %         fprintf(' cond_u: %.2f: ', cond_u);
-%         [sos_prob,~,~,~,~,~] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
+%         [sos_prob,~,~,~,~] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
 %                                 cond_u,lambda,ccm_eps,return_metric);
 %         if (sos_prob == 0)
 %             solved = 1;
@@ -67,7 +68,7 @@ x3_lim = pi; %rotor angle
 %     end
 %     if (solved)
 %         euc_bounds(ll) = sqrt(cond_u)/lambda;
-%         fprintf('cond_l: %.2f, cond_u: %.2f\n', cond_l, cond_u);
+%         fprintf(' cond_l: %.2f, cond_u: %.2f\n', cond_l, cond_u);
 %     else
 %         continue;
 %     end
@@ -75,9 +76,9 @@ x3_lim = pi; %rotor angle
 %     %Now do bisection search
 %     while(cond_u - cond_l >= eps)
 %         condn = (cond_l+cond_u)/2;
-%         fprintf('cond: %.2f', condn);
+%         fprintf(' cond: %.2f', condn);
 %         
-%         [sos_prob, w_lower, w_upper,~,~,~] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
+%         [sos_prob, w_lower, w_upper,~,~] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
 %                                 condn,lambda,ccm_eps,return_metric);
 %         
 %         if (sos_prob == 0)
@@ -85,7 +86,7 @@ x3_lim = pi; %rotor angle
 %             
 %             euc_bounds(ll) = sqrt(double(w_upper/w_lower))/lambda;
 %             d_bars(ll) = sqrt(double(1/w_lower))/lambda;           
-%
+% 
 %             cond_u = condn;
 %         else
 %             fprintf(' infeasible\n');
@@ -104,24 +105,28 @@ x3_lim = pi; %rotor angle
 
 %% Pick a solution
 
-load metric_FLR_comp_final.mat;
-lambda = lambda_range(11); %lambda = 4
-condn = cond_bound(11);
+% load metric_FLR_comp_final.mat;
+% lambda = lambda_range(11); 
+% condn = cond_bound(11);
+lambda = 2.5; 
+condn = 379;
 return_metric = 1;
 
 [sos_prob, w_lower, w_upper,W_mat, dW_x1_mat, dW_x2_mat] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
                                 condn,lambda,ccm_eps,return_metric);
 
-save('metric_FLR.mat','W_mat','dW_x1_mat','dW_x2_mat');
+save('metric_FLR.mat','W_mat','dW_x1_mat');
 
 %% Compute aux control bound
 
 disp('Checking CCM conditions and Computing control bound...');
 
-B = [zeros(3,1);1];
+B = [zeros(3,1);1/J];
+Bw = [0,(1/I),0,0;
+      0,0,0,(1/J)]';
 B_perp = [eye(3); zeros(1,3)];
 
-d_bar = sqrt(double(1/w_lower))/lambda; %normalized
+% d_bar = sqrt(double(1/w_lower))/lambda; %normalized
 
 ctrl_N = 10;
 x1_range = linspace(-x1_lim, x1_lim, ctrl_N);
@@ -140,6 +145,7 @@ f_mat = @(x) [x(2);
 delta_u = zeros(ctrl_N,ctrl_N,ctrl_N);
 eig_CCM = zeros(ctrl_N, ctrl_N, ctrl_N);
 eig_W = zeros(ctrl_N,ctrl_N,2);
+sigma_ThBw = zeros(ctrl_N,ctrl_N);
 
 for i = 1:length(x2_range)
     for j = 1:length(x1_range)
@@ -147,14 +153,19 @@ for i = 1:length(x2_range)
             x = [x1_range(j); x2_range(i); x3_range(k); 0];
             
             W = W_mat(x);
+            M = W\eye(4);
+            Theta = chol(M);
+            Theta_Bw = Theta*Bw;
+            sigma_ThBw(i,j) = max(sqrt(eig(Theta_Bw'*Theta_Bw)));
+            
             L = chol(W);
             
             f = f_mat(x);
             df = df_mat(x);
-            F = -dW_x1_mat(x)*f(1) - dW_x2_mat(x)*f(2) + ...
+            F = -dW_x1_mat(x)*f(1) + ...
                 df*W + W*df' + 2*lambda*W;
             
-            delta_u(i,j,k) = 0.5*d_bar*max(eig((inv(L))'*F*inv(L)))/...
+            delta_u(i,j,k) = 0.5*max(eig((inv(L))'*F*inv(L)))/...
                 sqrt(max(eig((inv(L))'*(B*B')*inv(L))));
             
             R_CCM = -B_perp'*F*B_perp;
@@ -165,9 +176,12 @@ for i = 1:length(x2_range)
         end
     end
 end
-disp('Control:'); disp(max(max(max(delta_u))));
-disp('W:'); disp(min(min(eig_W)));
+d_bar = max(sigma_ThBw(:))/lambda;
+disp('Control:'); disp(max(d_bar*delta_u(:)));
+disp('W:'); disp(min(min(eig_W(:,:,1))));
+disp(max(max(eig_W(:,:,2))));
 disp('CCM:'); disp(min(min(min(eig_CCM))));
+disp('Th_Bw:'); disp(max(max(sigma_ThBw)));
 
 
 %% CVX approx method
