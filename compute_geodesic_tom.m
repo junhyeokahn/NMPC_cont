@@ -1,7 +1,7 @@
-function [X, X_dot,J_opt,exitflag] = ...
+function [X, X_dot,J_opt,exitflag,Result] = ...
     compute_geodesic_tom(Prob,n,N,...
                     start_p,end_p,...
-                    T_e,T_dot_e,Aeq)
+                    T_e,T_dot_e,Aeq,warm)
 
 
 beq = [start_p; end_p];
@@ -12,12 +12,14 @@ for i = 1:n
         -(start_p(i)-end_p(i))/2];
 end
 
-Prob = replace_A(Prob,Aeq,beq,beq); 
-Prob = modify_x_0(Prob,vars_0);
-% Prob.user.W_fnc = W;
-% Prob.user.dW_fnc = dW;
+Prob = replace_A(Prob,Aeq,beq,beq);
 
-Prob = ProbCheck(Prob, 'npsol');
+Prob = modify_x_0(Prob,vars_0);
+
+Prob = ProbCheck(Prob,'npsol');
+if (warm.sol)
+    Prob = WarmDefSOL('npsol',Prob,warm.result);
+end
 
 Result = npsolTL(Prob);
                   

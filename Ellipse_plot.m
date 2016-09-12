@@ -33,12 +33,16 @@ function Ellipse_plot(A, C, varargin)
 
 %%%%%%%%%%%  start  %%%%%%%%%%%%%%%%%%%%%%%%%%%
 N = 20; % Default value for grid
+f_al = 0.1;
 
 % See if the user wants a different value for N.
 %----------------------------------------------
 if nargin > 2
  	N = varargin{1};
     c = varargin{2};
+    if nargin > 4
+        f_al = varargin{3};
+    end
 end
 
 
@@ -108,7 +112,7 @@ if strcmp(Type,'2D'),
     hold on;
     plot(C(1),C(2),'r*');
     axis equal, grid
-    patch(X(1,:)',X(2,:)',c,'facealpha',0.1);
+    patch(X(1,:)',X(2,:)',c,'facealpha',f_al);
 else
     mesh(XX,YY,ZZ);
     axis equal

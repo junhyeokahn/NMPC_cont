@@ -7,108 +7,111 @@ warning('off','MATLAB:lang:badlyScopedReturnValue');
 
 n = 6;
 g = 9.81;
-ccm_eps = 0.2;
+ccm_eps = 0.01;
 
 %Dynamics constants
 
 p_lim = pi/4;
 pd_lim = pi/3;
-vy_lim = 3;
+vy_lim = 2;
 vz_lim = 1.0;
 
 
 %% Define problem
 
-% lambda_range = linspace(0.1,1.5,13);
+% lambda_range = linspace(0.7,0.95,5);
 % lambda_range = (1/100)*round(lambda_range*100);
-lambda_range = 0.56;
-euc_bounds = NaN(length(lambda_range),1);
-d_bars = NaN(length(lambda_range),1);
-cond_bound = NaN(length(lambda_range),1);
-
-eps = 1;
-condn_prev = 50;
-return_metric = 0;
-
-for ll = 1:length(lambda_range)
-    lambda = lambda_range(ll);
-    
-    fprintf('**********\n');
-    fprintf('lambda: %f\n', lambda);
-    solved = 0;
-    
-    %Determine upper bound
-    cond_l = condn_prev;
-    cond_u = 1.2*condn_prev;
-    while (~solved) 
-        fprintf(' cond_u: %.2f: ', cond_u);
-        [sos_prob,~,~,~,~,~] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
-                                cond_u,lambda,ccm_eps,return_metric);
-        if (sos_prob == 0)
-            solved = 1;
-            fprintf('feasible \n');
-        else
-            %shift up condition number range
-            fprintf('\n');
-            cond_l = cond_u;
-            cond_u = 1.2*cond_u;
-        end
-    end
-    if (solved)
-        euc_bounds(ll) = sqrt(cond_u)/lambda;
-        fprintf(' cond_l: %.2f, cond_u: %.2f\n', cond_l, cond_u);
-    else
-        continue;
-    end
-    
-    %Now do bisection search
-    while(cond_u - cond_l >= eps)
-        condn = (cond_l+cond_u)/2;
-        fprintf(' cond: %.2f', condn);
-        
-        [sos_prob, w_lower, w_upper,~,~,~] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
-                                condn,lambda,ccm_eps,return_metric);
-        
-        if (sos_prob == 0)
-            fprintf(' feasible\n');
-            
-            euc_bounds(ll) = sqrt(double(w_upper/w_lower))/lambda;
-            d_bars(ll) = sqrt(double(1/w_lower))/lambda;           
-
-            cond_u = condn;
-        else
-            fprintf(' infeasible\n');
-            cond_l = condn;
-        end
-    end
-    condn_prev = cond_u;
-    cond_bound(ll) = cond_u;
-    disp('Euc_bound:'); disp(euc_bounds(ll));
-    disp('d_bar:'); disp(d_bars(ll));
-    fprintf('**********\n');
-    
-end
-
-pause;
+% lambda_range = 0.835;
+% euc_bounds = NaN(length(lambda_range),1);
+% d_bars = NaN(length(lambda_range),1);
+% cond_bound = NaN(length(lambda_range),1);
+% 
+% eps = 1;
+% condn_prev = 120;
+% return_metric = 0;
+% 
+% for ll = 1:length(lambda_range)
+%     lambda = lambda_range(ll);
+%     
+%     fprintf('**********\n');
+%     fprintf('lambda: %f\n', lambda);
+%     solved = 0;
+%     
+%     %Determine upper bound
+%     cond_l = condn_prev;
+%     cond_u = 1.2*condn_prev;
+%     while (~solved) 
+%         fprintf(' cond_u: %.2f: ', cond_u);
+%         [sos_prob,~,~,~,~,~,~,~] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+%                                 cond_u,lambda,ccm_eps,return_metric);
+%         if (sos_prob == 0)
+%             solved = 1;
+%             fprintf('feasible \n');
+%         else
+%             %shift up condition number range
+%             fprintf('\n');
+%             cond_l = cond_u;
+%             cond_u = 1.2*cond_u;
+%         end
+%     end
+%     if (solved)
+%         euc_bounds(ll) = sqrt(cond_u)/lambda;
+%         fprintf(' cond_l: %.2f, cond_u: %.2f\n', cond_l, cond_u);
+%     else
+%         continue;
+%     end
+%     
+%     %Now do bisection search
+%     while(cond_u - cond_l >= eps)
+%         condn = (cond_l+cond_u)/2;
+%         fprintf(' cond: %.2f', condn);
+%         
+%         [sos_prob, w_lower, w_upper,~,~,~,~,~] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+%                                 condn,lambda,ccm_eps,return_metric);
+%         
+%         if (sos_prob == 0)
+%             fprintf(' feasible\n');
+%             
+%             euc_bounds(ll) = sqrt(double(w_upper/w_lower))/lambda;
+%             d_bars(ll) = sqrt(double(1/w_lower))/lambda;           
+% 
+%             cond_u = condn;
+%         else
+%             fprintf(' infeasible\n');
+%             cond_l = condn;
+%         end
+%     end
+%     condn_prev = cond_u;
+%     cond_bound(ll) = cond_u;
+%     disp('Euc_bound:'); disp(euc_bounds(ll));
+%     disp('d_bar:'); disp(d_bars(ll));
+%     fprintf('**********\n');
+%     
+% end
+% 
+% pause;
 
 %% Pick a solution
 
-% load metric_FLR_comp_final.mat;
-% lambda = lambda_range(11); 
-% condn = cond_bound(11);
-lambda = 0.57; 
-condn = 82.8;
+% lambda = 0.83; 
+% condn = 132.8;
+% lambda = 0.81;
+% condn = 128.55;
+lambda = 0.835;
+condn = 133.5;
 return_metric = 1;
 
-[sos_prob, w_lower, w_upper,W_mat, dW_p_mat, dW_vy_mat,dW_vz_mat, dW_pd_mat] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+[sos_prob, w_lower, w_upper,W_mat, dW_p_mat, dW_vy_mat,~, ~, W_upper] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
                                 condn,lambda,ccm_eps,return_metric);
 
-save('metric_PVTOL.mat','W_mat','dW_p_mat','dW_vy_mat','dW_vz_mat','dW_pd_mat');
+save('metric_PVTOL.mat','W_mat','dW_p_mat','dW_vy_mat');
 
 %% Compute aux control bound
 
 disp('Checking CCM conditions and Computing control bound...');
-lambda = 0.56;
+lambda = 0.998*lambda;
+dW_vz_mat = @(x) zeros(n);
+dW_pd_mat = @(x) zeros(n);
 
 m = 0.486;
 J = 0.00383;
@@ -117,8 +120,7 @@ len = 0.25;
 B = [zeros(1,4),1/m,len/J;
      zeros(1,4),1/m,-len/J]';
  
-Bw = [zeros(1,3),1,0,0;
-      zeros(1,3),0,sin(pi/4),0]';
+Bw = @(x)[zeros(1,3),cos(x(3)),-sin(x(3)),0]';
   
 B_perp = [eye(4);
         zeros(2,4)];
@@ -147,7 +149,7 @@ df_mat = @(x) [0,0,-x(4)*sin(x(3))-x(5)*cos(x(3)),cos(x(3)),-sin(x(3)),0;
 %                0,0, g*sin_x(x(3)),-x(6),0,-x(4);
 %                zeros(1,6)];
 
-f_mat = @(x) [pd; %p_dot
+f_mat = @(x) [x(6); %p_dot
               x(6)*x(5) - g*sin(x(3)); %vy_dot
               -x(6)*x(4) - g*cos(x(3)); %vz_dot
               0]; %pd_dot
@@ -157,7 +159,7 @@ f_mat = @(x) [pd; %p_dot
 
 delta_u = zeros(ctrl_N,ctrl_N,ctrl_N,ctrl_N);
 eig_CCM = zeros(ctrl_N, ctrl_N, ctrl_N, ctrl_N);
-% eig_W = zeros(ctrl_N,ctrl_N,2);
+eig_W = zeros(ctrl_N,ctrl_N,2);
 sigma_ThBw = zeros(ctrl_N,ctrl_N,ctrl_N,ctrl_N);
 
 for i = 1:length(p_range)
@@ -169,7 +171,7 @@ for i = 1:length(p_range)
                 W = W_mat(x);
                 M = W\eye(n);
                 Theta = chol(M);
-                Theta_Bw = Theta*Bw;
+                Theta_Bw = Theta*Bw(x);
                 sigma_ThBw(i,j,k,l) = max(sqrt(eig(Theta_Bw'*Theta_Bw)));
                 
                 L = chol(W);
@@ -187,8 +189,8 @@ for i = 1:length(p_range)
                 R_CCM = -B_perp'*F*B_perp;
                 
                 eig_CCM(i,j,k,l) = min(eig(R_CCM));
-%                 eig_W(i,j,1) = min(eig(W));
-%                 eig_W(i,j,2) = max(eig(W));
+                eig_W(i,j,1) = min(eig(W));
+                eig_W(i,j,2) = max(eig(W));
             end
         end
     end

@@ -1,10 +1,9 @@
 function J = Geodesic_cost_tom(vars,w,n,K,W_fnc,Phi,Phi_dot)
 
-% K = Prob.user.K;
-% n = Prob.user.n;
-% w = Prob.user.w;
-
 J = 0;
+
+global GEO_X;
+global GEO_MXDOT;
 
 for k = 1:K+1 %0 ---> K
     x_k = Phi(:,:,k)*vars;
@@ -15,8 +14,10 @@ for k = 1:K+1 %0 ---> K
     
     M_xdot = M*x_dot_k;
     J = J + (1/2)*w(k)*(x_dot_k'*M_xdot); 
+    
+    GEO_X(:,k) = x_k;
+    GEO_MXDOT(:,k) = M_xdot;
 end
-
 
 
 return

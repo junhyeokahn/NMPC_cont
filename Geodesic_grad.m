@@ -1,30 +1,29 @@
-function GradObj = Geodesic_grad(vars,w,K,N,n,T,W_fnc,dW_fnc,Phi,Phi_dot)
+function GradObj = Geodesic_grad(~,w,K,N,n,Ti,~,dW_fnc,~,Phi_dot,n_W)
 
-% K = Prob.user.K;
-% n = Prob.user.n;
-% T = Prob.user.T;
-% w = Prob.user.w;
-% N = Prob.user.N;
+global GEO_X;
+global GEO_MXDOT;
 
 GradObj = zeros(n*(N+1),1);
-I = eye(n);
 
 for k = 1:K+1 %0 ---> K
-    x_k = Phi(:,:,k)*vars;
-    x_dot_k = Phi_dot(:,:,k)*vars;
-    
-    W = W_fnc(x_k);
-    M = W\eye(n);
-    
-    M_xdot = M*x_dot_k;
+%     x_k = Phi(:,:,k)*vars;
+%     x_dot_k = Phi_dot(:,:,k)*vars;
+%     
+%     W = W_fnc(x_k);
+%     M = W\eye(n);
+%     
+%     M_xdot = M*x_dot_k;
+
+    M_xdot = GEO_MXDOT(:,k);
         
-    W_dx = dW_fnc(x_k);
+    W_dx = dW_fnc(GEO_X(:,k));
     
     GradObj = GradObj + w(k)*Phi_dot(:,:,k)'*M_xdot;
     
-    for i = 1:n
+    for j = 1:length(n_W)
+        i = n_W(j);
         GradObj = GradObj+...
-           -(1/2)*w(k)*(M_xdot'*W_dx{i}*M_xdot)*kron(I(:,i),T(:,k));
+           -(1/2)*w(k)*(M_xdot'*W_dx{i}*M_xdot)*Ti(:,k,j);
     end
 end
 

@@ -15,7 +15,7 @@ u_L = u_con(:,1);
 u_U = u_con(:,2);
 
 %State cost weighting
-Q = diag([1;1;1;1;1;2]);
+Q = diag([1;1;1;1;1;4]);
 
 %Control cost weighting
 R = 0.5*eye(m);
@@ -73,12 +73,12 @@ xu_L = [kron(ones(N+1,1),x_L);
 xu_U = [kron(ones(N+1,1),x_U);
         kron(ones(N+1,1),u_U)]; 
        
-MPC_cost = @(xu) (Tp/2)*(xu-xu_eq)'*F*(xu-xu_eq) ;
-MPC_grad = @(xu) Tp*F*(xu-xu_eq);
-MPC_hess = @(xu) Tp*F;
+MPC_cost = @(xu) (Tp/2)*(xu-xu_eq)'*F*(xu-xu_eq);% + Obs_cost(xu,n,N,obs) ;
+MPC_grad = @(xu) Tp*F*(xu-xu_eq);% + Obs_grad(xu,n,m,N,obs);
+% MPC_hess = @(xu) Tp*F;
 
-c_L = zeros(n*(N+1)+2,1);
-c_U = [zeros(n*(N+1),1);RPI_bound;alpha];
+c_L = [zeros(n*(N+1)+2,1); ones(obs.n_obs*(N+1),1)];
+c_U = [zeros(n*(N+1),1);RPI_bound;alpha;Inf*ones(obs.n_obs*(N+1),1)];
 
 xu0 = zeros((n+m)*(N+1),1);
 
@@ -90,7 +90,8 @@ NMPC_Prob = conAssign(MPC_cost,MPC_grad,[],[],...
             c_L,c_U,...
             [],[],[],[]);
         
-% NMPC_Prob.CheckNaN = 1;
+        
+% NMPC_Prob.SOL.optPar(10) = 1e-3;
         
 NMPC_Prob.user.x_act = zeros(n,1);
 NMPC_Prob.user.D = D;
@@ -102,9 +103,8 @@ NMPC_Prob.user.df = df;
 NMPC_Prob.user.B_full = B_full;
 NMPC_Prob.user.Tp = Tp;
 NMPC_Prob.user.P = P;
-% NMPC_Prob.user.M = M;
-% NMPC_Prob.user.W = W;
 NMPC_Prob.user.geo_MPC = geo_MPC;
 NMPC_Prob.user.x_eq = x_eq;
+NMPC_Prob.user.obs = obs;
 
 end
