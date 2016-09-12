@@ -21,13 +21,13 @@ vz_lim = 1.0;
 
 % lambda_range = linspace(0.7,0.95,5);
 % lambda_range = (1/100)*round(lambda_range*100);
-% lambda_range = 0.835;
+% lambda_range = 0.81;
 % euc_bounds = NaN(length(lambda_range),1);
 % d_bars = NaN(length(lambda_range),1);
 % cond_bound = NaN(length(lambda_range),1);
 % 
 % eps = 1;
-% condn_prev = 120;
+% condn_prev = 70;
 % return_metric = 0;
 % 
 % for ll = 1:length(lambda_range)
@@ -93,18 +93,16 @@ vz_lim = 1.0;
 
 %% Pick a solution
 
-% lambda = 0.83; 
-% condn = 132.8;
+lambda = 0.83; 
+condn = 132.8;
 % lambda = 0.81;
 % condn = 128.55;
-lambda = 0.835;
-condn = 133.5;
 return_metric = 1;
 
 [sos_prob, w_lower, w_upper,W_mat, dW_p_mat, dW_vy_mat,~, ~, W_upper] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
                                 condn,lambda,ccm_eps,return_metric);
 
-save('metric_PVTOL.mat','W_mat','dW_p_mat','dW_vy_mat');
+save('metric_PVTOL.mat','W_mat','dW_p_mat','dW_vy_mat','W_upper');
 
 %% Compute aux control bound
 
