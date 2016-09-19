@@ -1,4 +1,4 @@
-function GradObj = Geodesic_grad(~,w,K,N,n,Ti,~,dW_fnc,~,Phi_dot,n_W)
+function GradObj = Geodesic_grad(~,w,K,N,n,Ti,~,dW,~,Phi_dot,~)
 
 global GEO_X;
 global GEO_MXDOT;
@@ -16,15 +16,19 @@ for k = 1:K+1 %0 ---> K
 
     M_xdot = GEO_MXDOT(:,k);
         
-    W_dx = dW_fnc(GEO_X(:,k));
+%     W_dx = dW(GEO_X(:,k));
     
     GradObj = GradObj + w(k)*Phi_dot(:,:,k)'*M_xdot;
     
-    for j = 1:length(n_W)
-        i = n_W(j);
-        GradObj = GradObj+...
-           -(1/2)*w(k)*(M_xdot'*W_dx{i}*M_xdot)*Ti(:,k,j);
-    end
+    GradObj = GradObj+...
+           -(1/2)*w(k)*(M_xdot'*dW.p(GEO_X(:,k))*M_xdot)*Ti(:,k,1) + ...
+           -(1/2)*w(k)*(M_xdot'*dW.vy(GEO_X(:,k))*M_xdot)*Ti(:,k,2);
+    
+%     for j = 1:length(n_W)
+%         i = n_W(j);
+%         GradObj = GradObj+...
+%            -(1/2)*w(k)*(M_xdot'*W_dx{i}*M_xdot)*Ti(:,k,j);
+%     end
 end
 
 

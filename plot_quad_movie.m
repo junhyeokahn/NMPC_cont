@@ -2,7 +2,7 @@
 close all;
 clc;
 
-t_step = (0.1/dt);
+t_step = (0.005/dt);
 
 [U_pos,S_pos,V_pos] = svd(M_ccm_pos);
 S_new = (sqrt(S_pos\eye(2)) + len*eye(2))^2\eye(2);
@@ -37,11 +37,11 @@ for i = 1:obs.n_obs
 end
 for i = 1:length(MPC_state) %each cell is new MPC segment
     plot(MPC_state{i}(1:round(delta/dt),1),MPC_state{i}(1:round(delta/dt),2),'b-','linewidth',2); %resolve after delta
-    for j = 1:(0.1/dt):round(delta/dt)
-        Ellipse_plot(M_ccm_pos_infl,MPC_state{i}(j,1:2)',25,'k');
+    for j = 1:(delta/dt):round(delta/dt)+1
+        Ellipse_plot(M_ccm_pos_infl,MPC_state{i}(j,1:2)',25,'b',0.05);
     end
 end
-Ellipse_plot(M_ccm_pos,x_eq(1:2),25,'r');
+% Ellipse_plot(M_ccm_pos,x_eq(1:2),25,'r');
 line([-5 -5],[-5, 5],'color','k','linewidth',2);
 line([-5  5],[ 5, 5],'color','k','linewidth',2);
 line([ 5  5],[ 5,-5],'color','k','linewidth',2);
@@ -55,7 +55,7 @@ R = [cos(x_act(i,3)), sin(x_act(i,3));
 for j = 1:J
     quad_p(:,j) = x_act(i,1:2)' + R*quad_bound(:,j);
 end
-hp = patch(quad_p(1,:),quad_p(2,:),'k','FaceAlpha',0.5,'linewidth',2);
+hp = patch(quad_p(1,:),quad_p(2,:),'k','FaceAlpha',0.8,'linewidth',2);
 hold off
 
 % xl = get(gca,'Xlim');
@@ -69,7 +69,7 @@ xlim(1.1*[-5,5]); ylim(1.1*[-5,5]);
 grid on;
 
 axis manual;
-pause;
+% pause;
 for i = t_step:t_step:length(solve_t)
     
     quad_p = quad_bound;

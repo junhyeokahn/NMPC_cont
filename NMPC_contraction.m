@@ -6,28 +6,34 @@ m = 2;
 
 %% Obstacle info
 
-obs_loc = [
-           [3;-4],...
+obs_loc = [[3;-4],...
            [0.7;-3],...
            [-1;-0.5],...
            [2.5;-0.5],...
            [-4;1],...
            [1.0;1.7],...
            [2.5;3.8],...
-           [-4;-2],...
+           [-2.5;-4.5],...
            [-2;4]];
+obs_loc_mpc = [[0.7;-3],...
+           [-1;-0.5],...
+           [2.5;-0.5],...
+           [1.0;1.7],...
+           [2.5;3.8],...
+           [-2.5;-4.5]];
 obs_rad = [1,0.9,0.8,1.2,1,0.9,0.5,1,0.6];
-% obs_loc = []; obs_rad = [];
-% obs_decay = [2.45,3.0];
+obs_rad_mpc = [0.9,0.8,1.2,0.9,0.5,1];
 obs = struct('n_obs',length(obs_rad),'pos',obs_loc,'r',obs_rad);
+obs_mpc = struct('n_obs',length(obs_rad_mpc),'pos',obs_loc_mpc,'r',obs_rad_mpc);
 
 %% Setup Metric
 
 load 'metric_PVTOL.mat';
+% W_mat = @(x) W_mat(x);
 
-W = @(x) W_mat(x);
-dW = @(x) {zeros(6), zeros(6), dW_p_mat(x),...
-           dW_vy_mat(x),zeros(6), zeros(6)};
+% dW = @(x) {zeros(6), zeros(6), dW_p_mat(x),...
+%            dW_vy_mat(x),zeros(6), zeros(6)};
+dW = struct('p',dW_p_mat,'vy',dW_vy_mat);
 
 sigma_ThBw = 0.3296;
 lambda =  0.8283;
@@ -81,6 +87,13 @@ for i = 1:obs.n_obs
 end
 obs.M_obs = M_obs;
 
+M_obs_mpc = zeros(2,2,obs_mpc.n_obs);
+for i = 1:obs_mpc.n_obs
+    S_new = (sqrt(S_pos\eye(2)) + (obs_mpc.r(i)+len)*eye(2))^2\eye(2);
+    M_obs_mpc(:,:,i) = U_pos*S_new*V_pos';
+end
+obs_mpc.M_obs = M_obs_mpc;
+
 P = 2.5*eye(n);
 alpha = 1e-3;
 
@@ -92,57 +105,55 @@ ctrl_constr = [0.1*mass*g+ctrl_bound, 2*mass*g-ctrl_bound;
 
 geodesic_N = 2;
 
+setup_geodesic_MPC(n,geodesic_N,W_mat,dW,n_W); %initializes geodesic_MPC struct
+global geodesic_MPC;
+
 [geo_Prob,geo_Ke,T_e,T_dot_e,geo_Aeq] = ...
-        setup_geodesic_calc(n,geodesic_N,W,dW,n_W);
+        setup_geodesic_calc(n,geodesic_N,W_mat,dW,n_W);
     
 geo_warm = struct('sol',0,'result',[]);    
 
-% Assemble geodesic struct for MPC
-geodesic_MPC = struct('geo_Prob',geo_Prob,'W',W,'geodesic_N',geodesic_N,'T_e',T_e,'T_dot_e',T_dot_e,...
-                      'geo_Aeq',geo_Aeq,'warm',geo_warm);
+%% Setup MP numerics
 
-%% Setup NMPC numerics
-
-% Tp = 24 (5);
 Tp = 28;
-delta = 2.0;
-dt = 0.002;
+dt = 0.001;
+N_mp = 120;
 
 x_eq = [4.5;4.5;0;0;0;0];
 u_eq = [0.5*mass*g; 0.5*mass*g];
 
-% N_mpc = 120 (5);
-N_mpc = 120;
+T_mpc = 3;
+dt_sim = 1/250;
+delta = 1;
+N_mpc = 14;
 
-[NMPC_Prob,L_e,L_e_full,MPC_st] = setup_NMPC(n,m,...
+% Setup motion planning problem
+[MP_Prob,L_e_mp,~] = setup_MP(n,m,...
     f,B,df, state_constr_low,ctrl_constr,...
-    N_mpc,Tp,delta,dt,...
-    P,alpha,geodesic_MPC,(0.1*d_bar)^2,...
-    x_eq,u_eq,obs);
+    N_mp,Tp,dt,...
+    P,alpha,d_bar^2,...
+    x_eq,obs,'MP');
 
-load MPC_WARM.mat;
-% mpc_warm = struct('sol',0,'shift',0,...
-%               's_t',MPC_st,'Tp',Tp,...
-%               'state',[],'ctrl',[],'result',[]);
+load MP_WARM.mat;
 
-%% Test MPC Solve
+%% Test MP Solve
 
-% test_state = [-4.4;
-%               -5;
-%                0;
-%                1;
-%                0;
-%                0]; 
-test_state = mpc_warm.state(1,:)';
+test_state = [-4.4;
+              -5;
+               0;
+               1.3;
+               0;
+               0]; 
+% test_state = mp_warm.state(1,:)';
       
 tic
-[NMPC_state,NMPC_ctrl,converged_MPC,mpc_warm] = compute_NMPC(NMPC_Prob,...
+[MP_state,MP_ctrl,converged_MP,mp_warm] = compute_MP(MP_Prob,...
     test_state,test_state,state_constr_low,ctrl_constr,x_eq,u_eq,...
-    n,m,N_mpc,L_e_full,mpc_warm);
+    n,m,N_mp,L_e_mp,mp_warm);
 toc
-disp(converged_MPC);
+disp('MP:'); disp(converged_MP);
 
-mpc_warm.sol = 1;
+mp_warm.sol = 1;
 
 % Visualize
 close all
@@ -153,24 +164,23 @@ for i_ob = 1:obs.n_obs
     Ellipse_plot(eye(2)*(1/(obs.r(i_ob)+len)^2),obs.pos(:,i_ob), 25,'r',1);
 end
 %RCI set
-for i = 1:(0.2/dt):length(NMPC_state)
-    Ellipse_plot(M_ccm_pos,NMPC_state(i,1:2)',25,'k');
+for i = 1:(T_mpc/dt):length(MP_state)
+    Ellipse_plot(M_ccm_pos,MP_state(i,1:2)',25,'k');
 end
 %Terminal set
 Ellipse_plot(P(1:2,1:2)*(1/alpha),x_eq(1:2),25,'r');
 
-%Full MPC traj
-plot(NMPC_state(:,1),NMPC_state(:,2),'r-','linewidth',2);
-quiver(NMPC_state(1:(0.1/dt):end-1,1),NMPC_state(1:(0.1/dt):end-1,2),...
-       (NMPC_ctrl(1:(0.1/dt):end-1,1)+NMPC_ctrl(1:(0.1/dt):end-1,2)).*sin(NMPC_state(1:(0.1/dt):end-1,3)),...
-       (NMPC_ctrl(1:(0.1/dt):end-1,1)+NMPC_ctrl(1:(0.1/dt):end-1,2)).*cos(NMPC_state(1:(0.1/dt):end-1,3)));
+%Full MP traj
+plot(MP_state(:,1),MP_state(:,2),'b-','linewidth',1);
+quiver(MP_state(1:(0.5/dt):end-1,1),MP_state(1:(0.5/dt):end-1,2),...
+       (MP_ctrl(1:(0.5/dt):end-1,1)+MP_ctrl(1:(0.5/dt):end-1,2)).*sin(MP_state(1:(0.5/dt):end-1,3)),...
+       (MP_ctrl(1:(0.5/dt):end-1,1)+MP_ctrl(1:(0.5/dt):end-1,2)).*cos(MP_state(1:(0.5/dt):end-1,3)));
 
+plot(test_state(1),test_state(2),'go','markersize',10,'markerfacecolor','g');
 grid on
 axis equal
 xlabel('X'); ylabel('Z','interpreter','latex');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
-
-pause;
 
 %% Test Geodesic Numerics
 
@@ -179,40 +189,88 @@ pause;
 % test_state = x_eq; %just to see cool curved lines
 
 tic
-[X, X_dot,J_opt,converged_geo,geo_result] = ...
+[~, ~,J_opt,converged_geo,geo_result,geo_Prob] = ...
     compute_geodesic_tom(geo_Prob,n,geodesic_N,...
-            NMPC_state(1,:)',test_state,...
+            MP_state(1,:)',test_state,...
             T_e,T_dot_e,geo_Aeq,geo_warm);
 toc;
-disp(converged_geo);
-disp('Geo dist: '); disp(sqrt(J_opt));
-
+disp('Geo dist: ');disp(converged_geo);
+disp(sqrt(J_opt));
+geo_Prob.CHECK = 1;
 geo_warm.sol = 1;
 geo_warm.result = geo_result;
+
+tic
+[X, X_dot,J_opt,converged_geo,geo_result_MPC,geo_Prob_MPC] = ...
+    compute_geodesic_tom(geodesic_MPC.geo_Prob,n,geodesic_N,...
+            MP_state(1,:)',test_state,...
+            T_e,T_dot_e,geo_Aeq,geodesic_MPC.warm);
+toc;
+disp('MPC Geo dist: '); disp(converged_geo);
+disp(sqrt(J_opt));
+geo_Prob_MPC.CHECK = 1;
+geodesic_MPC.geo_Prob = geo_Prob_MPC;
+geodesic_MPC.warm.sol = 1;
+geodesic_MPC.warm.result = geo_result_MPC;
 
 figure(1)
 plot(X(1,:),X(2,:),'b-','linewidth',2);
 
-pause;
+% pause;
+
+%% Setup MPC numerics
+
+[MPC_Prob,L_e,L_e_mpc,MPC_st] = setup_NMPC(n,m,...
+    f,B,df, state_constr_low,ctrl_constr,...
+    N_mpc,T_mpc,delta,dt,...
+    P,alpha,d_bar^2,M_ccm,...
+    x_eq,obs_mpc,'MPC');
+
+load MPC_WARM.mat;
+% global NMPC_GEOD;
+% NMPC_GEOD = zeros(200,2);
+% global GEOD_ITER; 
+% GEOD_ITER = 1;
+
+% mpc_warm = struct('Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
+%                   's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
+
+%% Test MPC solve
+tic
+[MPC_state,~,converged_MPC,mpc_warm,MPC_Prob] = compute_NMPC(MPC_Prob,...
+    test_state,MP_state(1,:)',state_constr_low,ctrl_constr,MP_state,MP_ctrl,...
+    n,m,N_mpc,L_e_mpc,mpc_warm,dt);
+toc
+disp('MPC:');disp(converged_MPC);
+
+MPC_Prob.CHECK = 1;
+mpc_warm.sol = 1;
+
+figure(1)
+plot(MPC_state(:,1),MPC_state(:,2),'r-','linewidth',2);
+
+% pause;
                 
 %% Setup Auxiliary controller
 aux_Prob = setup_opt_aux(m);
 
 tic
 [ctrl_opt,converged_aux] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
-                            W,f,B,NMPC_ctrl(1,:)',lambda);
+                            W_mat,f,B,MP_ctrl(1,:)',lambda);
 toc;
-disp(converged_aux);
-disp('opt_control:'); disp(ctrl_opt);
+disp('opt_control:');disp(converged_aux);
+disp(ctrl_opt);
 
-pause;
+% pause;
+% keyboard;
 
 %% Set up non-linear sim
 
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
-t_end = Tp;
-solve_t = (0:dt:t_end)';
+% dt_sim = 1/400;
+t_end = 0.5*Tp;
+solve_t = (0:dt_sim:t_end)';
 T_steps = length(solve_t)-1;
 
 dt_MPC = delta;
@@ -231,7 +289,8 @@ x_act(1,:) = test_state';
 Geod = cell(T_steps,1);
 
 Aux_ctrl = zeros(T_steps,m);
-True_ctrl = zeros(T_steps,m);
+True_ctrl = zeros((t_end/dt)+1,m);
+Nom_ctrl = zeros((t_end/dt)+1,m);
 
 ctrl_solve_time = zeros(T_steps,3);
 ctrl_solve_time(:,1) = NaN;
@@ -242,7 +301,7 @@ geo_energy = zeros(T_steps,2);
 geo_energy(:,2) = NaN;
 
 state_0 = test_state;
-state_0_MPC = NMPC_state(1,:)';
+state_0_MPC = MP_state(1,:)';
 
 i_mpc = 0;
 
@@ -256,31 +315,34 @@ for i = 1:T_steps
         
         fprintf('%d/%d:',i,T_steps);
         
-        [~, ~,J_opt,~,~] = compute_geodesic_tom(geo_Prob,...
+        [~, ~,J_opt,~,~,geo_Prob] = compute_geodesic_tom(geo_Prob,...
             n,geodesic_N,state_0_MPC,state_0,T_e,T_dot_e,geo_Aeq,geo_warm);
         geo_energy(i,1) = J_opt;
+
+%         figure(1)
+%         plot(x_act(1:i,1),x_act(1:i,2),'k','linewidth',2);
         
         tic
-        [NMPC_state,NMPC_ctrl,opt_solved(i,1),mpc_warm] = ...
-         compute_NMPC(NMPC_Prob,...
-            state_0,state_0_MPC,state_constr_low,ctrl_constr,x_eq,u_eq,...
-            n,m,N_mpc,L_e_full,mpc_warm);
+        [MPC_x,MPC_u,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
+         compute_NMPC(MPC_Prob,state_0,state_0_MPC,state_constr_low,ctrl_constr,MP_state,MP_ctrl,...
+            n,m,N_mpc,L_e_mpc,mpc_warm,dt);
         ctrl_solve_time(i,1) = toc;
         
         fprintf('%d, %.2f \n', opt_solved(i,1),ctrl_solve_time(i,1));
         
+        mpc_warm.solve_t = solve_t(i);
         mpc_warm.shift = delta;
         mpc_warm.sol = 1;
         
         i_mpc = i_mpc + 1;
         
-        MPC_state{i_mpc} = NMPC_state;
-        MPC_ctrl{i_mpc} = NMPC_ctrl;
+        MPC_state{i_mpc} = MPC_x;
+        MPC_ctrl{i_mpc} = MPC_u;
         
         x_nom = MPC_state{i_mpc}(1,:);
-        u_nom = MPC_ctrl{i_mpc}(1:2,:);
+        u_nom = MPC_ctrl{i_mpc}(1:round(dt_sim/dt)+1,:);
         
-        [~, ~,J_opt,~,geo_result] = compute_geodesic_tom(geo_Prob,n,geodesic_N,...
+        [~, ~,J_opt,~,geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,n,geodesic_N,...
             x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm);
         
         geo_energy(i,2) = J_opt;
@@ -291,7 +353,7 @@ for i = 1:T_steps
     else
         i_mpc_use = round((mod(solve_t(i),delta))/dt)+1;
         x_nom = MPC_state{i_mpc}(i_mpc_use,:);
-        u_nom = MPC_ctrl{i_mpc}(i_mpc_use:i_mpc_use+1,:);
+        u_nom = MPC_ctrl{i_mpc}(i_mpc_use:i_mpc_use+round(dt_sim/dt),:);
     end
     
     %Nominal acceleration
@@ -300,7 +362,7 @@ for i = 1:T_steps
     
     %Optimal Control
     tic
-    [X, X_dot,J_opt,opt_solved(i,2),geo_result] = compute_geodesic_tom(geo_Prob,...
+    [X, X_dot,J_opt,opt_solved(i,2),geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,...
         n,geodesic_N,x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm);
     ctrl_solve_time(i,2) = toc;
     
@@ -310,20 +372,21 @@ for i = 1:T_steps
     
     tic
     [Aux_ctrl(i,:),opt_solved(i,3)] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
-                            W,f,B,u_nom(1,:)',lambda);
+                            W_mat,f,B,u_nom(1,:)',lambda);
     ctrl_solve_time(i,3) = toc;
     
-    True_ctrl(i,:) = u_nom(1,:)+Aux_ctrl(i,:);
+    True_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = u_nom+kron(ones((dt_sim/dt)+1,1),Aux_ctrl(i,:));
+    Nom_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = u_nom;
     
     %Simulate Optimal
-    w_dist(i,:) = w_max*[cos(x_act(i,3));
-                        -sin(x_act(i,3))]';
+%     w_dist(i,:) = w_max*[cos(x_act(i,3));
+%                         -sin(x_act(i,3))]';
     
-    %         dist_dir = (X_dot(:,geo_Ke+1))'*(W(state_0)\eye(n))*B_w;
-    %         w_dist = w_max*(dist_dir'/norm(dist_dir));
+    dist_dir = (X_dot(:,geo_Ke+1))'*(W_mat(state_0)\eye(n))*B_w;
+    w_dist(i,:) = w_max*(dist_dir/norm(dist_dir));
     %     w_dist = zeros(2,1);
     
-    [d_t,d_state] = ode45(@(t,d_state)ode_sim(t,d_state,[solve_t(i);solve_t(i+1)],u_nom,Aux_ctrl(i,:),...
+    [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,[solve_t(i):dt:solve_t(i+1)]',u_nom,Aux_ctrl(i,:),...
         f,B,B_w,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state_0,ode_options);
 
     state_0 = d_state(end,:)';
@@ -345,11 +408,19 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 %Control Trajectory
 figure()
+subplot(2,1,1)
 hold on
-plot(solve_t(1:end-1),True_ctrl(:,1)-Aux_ctrl(:,1),'b:','linewidth',2);
-plot(solve_t(1:end-1),True_ctrl(:,2)-Aux_ctrl(:,2),'r:','linewidth',2);
-plot(solve_t(1:end-1),True_ctrl(:,1),'b-','linewidth',2);
-plot(solve_t(1:end-1),True_ctrl(:,2),'r-','linewidth',2);
+plot(0:dt:t_end,Nom_ctrl(:,1),'b-','linewidth',2);
+plot(0:dt:t_end,True_ctrl(:,1),'r-','linewidth',2);
+xlabel('Time [s]');
+ylabel('u(t)'); 
+set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+grid on
+
+subplot(2,1,2)
+hold on
+plot(0:dt:t_end,Nom_ctrl(:,2),'b-','linewidth',2);
+plot(0:dt:t_end,True_ctrl(:,2),'r-','linewidth',2);
 xlabel('Time [s]');
 ylabel('u(t)'); 
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
@@ -365,17 +436,19 @@ grid on
 %2D State Plot
 figure()
 hold on
+plot(MP_state(:,1),MP_state(:,2),'b--','linewidth',1.5);
 for i_mpc = 1:T_steps_MPC
-    plot(MPC_state{i_mpc}(:,1),MPC_state{i_mpc}(:,2),'r--','linewidth',2);
+    plot(MPC_state{i_mpc}(1:(delta/dt),1),MPC_state{i_mpc}(1:(delta/dt),2),'r--','linewidth',2);
+    Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1,1:2)',30,'k');
 end
-plot(x_act(:,1),x_act(:,2),'r-','linewidth',2);
+plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
 
 Ellipse_plot(P(1:2,1:2)*(1/(alpha)), x_eq(1:2),30,'k');
 xlabel('$X$','interpreter','latex'); 
 ylabel('$Z$','interpreter','latex');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 grid on; 
-axis equal
+% axis equal
 
 %Solve Time
 figure()
@@ -424,5 +497,35 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 save('quad_sim.mat');
 
+%% Evaluate cost
 
+%Control cost weighting
+R = eye(m);
+
+J_cost = zeros((t_end/dt)+1,1);
+for i = 1:(t_end/dt)+1
+    J_cost(i) = True_ctrl(i,:)*R*True_ctrl(i,:)';
+end
+
+disp('NET COST:'); disp(trapz([0:dt:t_end],J_cost));
+
+%Evaluate nominal cost
+J_nom_mp = zeros((t_end/dt)+1,1);
+for i = 1:(t_end/dt)+1
+    J_nom_mp(i) = MP_ctrl(i,:)*R*MP_ctrl(i,:)';
+end
+disp('NOMINAL MP COST:'); disp(trapz([0:dt:t_end],J_nom_mp));
+
+figure()
+plot([0:dt:t_end],cumtrapz([0:dt:t_end],J_nom_mp),'r-','linewidth',2);
+grid on
+xlabel('Time [s]'); grid on;
+hold on
+
+J_nom_mpc = zeros((t_end/dt)+1,1);
+for i = 1:(t_end/dt)+1
+    J_nom_mpc(i) = Nom_ctrl(i,:)*R*Nom_ctrl(i,:)';
+end
+disp('NOMINAL MPC COST:'); disp(trapz([0:dt:t_end],J_nom_mpc));
+plot([0:dt:t_end],cumtrapz([0:dt:t_end],J_nom_mpc),'b-','linewidth',2);
 

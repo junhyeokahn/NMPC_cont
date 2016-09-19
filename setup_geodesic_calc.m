@@ -60,5 +60,8 @@ Name = 'Geodesic Problem';
 geo_Prob = conAssign(geo_cost_fnc,geo_grad_fnc,[],[],...
                   [],[],Name,zeros(n*(N+1),1),[],0,...
                   Aeq,zeros(2*n,1),zeros(2*n,1),[],[],[],[],[],[]);
+              
+geo_Prob.SOL.optPar(10) = 1e-6; 
+geo_Prob.SOL.optPar(11) = 1e-6;
 
 end

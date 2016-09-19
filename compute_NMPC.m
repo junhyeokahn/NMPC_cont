@@ -1,37 +1,23 @@
-function [NMPC_state,NMPC_ctrl,converged,warm] = ...
-    compute_NMPC(Prob,act_p,mpc_state,state_constr,ctrl_constr,x_eq,u_eq,...
-                 n,m,N,L_e,warm)
+function [NMPC_state,NMPC_ctrl,converged,warm,Prob] = ...
+    compute_NMPC(Prob,act_p,~,state_constr,ctrl_constr,MP_state,MP_ctrl,...
+    n,m,N,L_e,warm,dt)
 
-%adjust initial nominal state guess
-for i = 1:n
-    if abs(mpc_state(i)) > abs(state_constr(i));
-        mpc_state(i) = 0.98*sign(mpc_state(i))*abs(state_constr(i));
-    end
-end
+% global X_ACT;
+% global X_EQ;
 
 %Solution guess
 if (~warm.sol)
-    In = eye(n);
-    x0 = zeros((N+1)*n,1);
-    for i = 1:n
-        x0 = x0 + kron(linspace(mpc_state(i),x_eq(i),N+1), In(i,:))';
-    end
     
-    Im = eye(m);
-    u0 = zeros((N+1)*m,1);
-    for j = 1:m
-        u0 = u0 + kron(u_eq(j)*ones(N+1,1), Im(:,j));
-    end
-else
-    %Find: desired (real) time points to evaluate previous soln
+    x_term = MP_state((warm.Tp/dt)+1,:)';
+    u_term = MP_ctrl((warm.Tp/dt)+1,:)';
+    
     tau = (1/2)*(warm.Tp*warm.s_t+warm.Tp) ;
-    state_prev = warm.state(tau >= warm.shift,:);
-    ctrl_prev = warm.ctrl(tau >= warm.shift,:);
-    N_prev = length(state_prev);
+    state_prev = interp1([0:dt:warm.Tp]',MP_state(1:(warm.Tp/dt)+1,:),tau);
+    ctrl_prev = interp1([0:dt:warm.Tp]',MP_ctrl(1:(warm.Tp/dt)+1,:),tau);
     
     x0 = zeros((N+1)*n,1);
     u0 = zeros((N+1)*m,1);
-    for k = 1:N_prev
+    for k = 1:N+1
         x_prev = state_prev(k,:)';
         for i = 1:n
             if abs(x_prev(i)) >= abs(state_constr(i));
@@ -50,29 +36,111 @@ else
         end
         u0(1+(k-1)*m:k*m) = u_prev;
     end
-           
-    In = eye(n);
-    for i = 1:n
-        x0 = x0 + kron([zeros(1,N_prev),...
-          linspace(x_prev(i),x_eq(i),N+1-N_prev)], In(i,:))';
-    end
     
-    Im = eye(m);
-    for j = 1:m
-        u0 = u0 + kron([zeros(N_prev,1);
-                     u_eq(j)*ones(N+1-N_prev,1)], Im(:,j));
-    end    
+    Prob = modify_x_0(Prob,[x0;u0]);
+    
+    
+    %     In = eye(n);
+    %     x0 = zeros((N+1)*n,1);
+    %     for i = 1:n
+    %         x0 = x0 + kron(linspace(MP_state(1,i),x_term(i),N+1), In(i,:))';
+    %     end
+    %
+    %     Im = eye(m);
+    %     u0 = zeros((N+1)*m,1);
+    %     for j = 1:m
+    %         u0 = u0 + kron(linspace(MP_ctrl(1,j),u_term(j),N+1), Im(j,:))';
+    %     end
+else
+    %Find: desired (real) time points to evaluate previous soln
+    %     tau = (1/2)*(warm.Tp*warm.s_t+warm.Tp) ;
+    %     tau_int = tau+warm.shift;
+    %     tau_int = tau_int(tau_int <= warm.Tp);
+    %     state_prev = interp1(tau,warm.state,tau_int);
+    %     ctrl_prev = interp1(tau,warm.ctrl,tau_int);
+    %     N_prev = size(state_prev,1);
+    %
+    %     x0 = zeros(N_prev*n,1);
+    %     u0 = zeros(N_prev*m,1);
+    %     for k = 1:N_prev
+    %         x_prev = state_prev(k,:)';
+    %         for i = 1:n
+    %             if abs(x_prev(i)) >= abs(state_constr(i));
+    %                 x_prev(i) = 0.98*sign(x_prev(i))*abs(state_constr(i));
+    %             end
+    %         end
+    %         x0(1+(k-1)*n:k*n) = x_prev;
+    %
+    %         u_prev = ctrl_prev(k,:)';
+    %         for j = 1:m
+    %             if (u_prev(j) <= ctrl_constr(j,1))
+    %                 u_prev(j) = ctrl_constr(j,1);
+    %             elseif (u_prev(j) >= ctrl_constr(j,2))
+    %                 u_prev(j) = ctrl_constr(j,2);
+    %             end
+    %         end
+    %         u0(1+(k-1)*m:k*m) = u_prev;
+    %     end
+    %     x_term = warm.result.Prob.user.x_eq; %only used for first iteration
+    %
+    %     %now forward shift
+    %     if (N+1-N_prev > 0)
+    %         tau = warm.solve_t + warm.shift + tau'; %[t_{i+1}, t_{i+1}+T]
+    %         tau = tau(tau > warm.solve_t + warm.Tp); %[t_i+T, t_{i+1}+T]
+    %         t_span = warm.solve_t + warm.Tp:dt:warm.solve_t+warm.shift+warm.Tp;
+    %
+    %         i_start = round((warm.solve_t + warm.Tp)/dt) + 1;
+    %         i_end =  round((warm.solve_t + warm.shift + warm.Tp)/dt) + 1;
+    %
+    %         x_tail = interp1(t_span',MP_state(i_start:i_end,:),tau);
+    %         u_tail = interp1(t_span',MP_ctrl(i_start:i_end,:),tau);
+    %
+    %         for k = 1:N+1-N_prev
+    %             for i = 1:n
+    %                 if abs(x_tail(k,i)) >= abs(state_constr(i));
+    %                     x_tail(k,i) = 0.98*sign(x_tail(k,i))*abs(state_constr(i));
+    %                 end
+    %             end
+    %             for j = 1:m
+    %                 if (u_tail(k,j) <= ctrl_constr(j,1))
+    %                     u_tail(k,j) = ctrl_constr(j,1);
+    %                 elseif (u_tail(k,j) >= ctrl_constr(j,2))
+    %                     u_tail(k,j) = ctrl_constr(j,2);
+    %                 end
+    %             end
+    %         end
+    %
+    %         x_term = x_tail(end,:)';
+    %
+    %         x0 = [x0;reshape(x_tail',(N+1-N_prev)*n,1)];
+    %         u0 = [u0;reshape(u_tail',(N+1-N_prev)*m,1)];
+    %     end
+    i_end =  round((warm.solve_t + warm.shift + warm.Tp)/dt) + 1;
+    if (i_end > length(MP_state))
+        i_end = length(MP_state);
+    end
+    x_term = MP_state(i_end,:)';
 end
+
+
+% init_guess = (reshape(x0,n,N+1))';
+% figure(1)
+% plot(init_guess(:,1),init_guess(:,2),'g-','linewidth',1.5);
+% pause;
+
+Prob.user.x_act = act_p;
+% X_ACT = act_p;
+
+Prob.user.x_eq = x_term;
+% X_EQ = x_term;
 
 if (warm.sol)
     Prob = WarmDefSOL('snopt',Prob,warm.result);
 end
 
-Prob = modify_x_0(Prob,[x0;u0]);
-% Prob.user.x_act = act_p;
-Prob.user.x_act = mpc_state;
-
-Prob = ProbCheck(Prob,'snopt');
+if ~Prob.CHECK
+    Prob = ProbCheck(Prob,'snopt');
+end
 
 Result = snoptTL(Prob);
 
@@ -99,5 +167,10 @@ end
 warm.result = Result;
 warm.state = x_nom;
 warm.ctrl = u_nom;
+
+% figure(1)
+% children = get(gca,'children'); delete(children(1));
+% plot(NMPC_state(:,1),NMPC_state(:,2),'r-','linewidth',1.5);
+% pause;
 
 end

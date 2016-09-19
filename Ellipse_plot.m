@@ -110,7 +110,7 @@ end
 if strcmp(Type,'2D'),
     plot(X(1,:),X(2,:),c);
     hold on;
-    plot(C(1),C(2),'r*');
+    plot(C(1),C(2),'b*');
     axis equal, grid
     patch(X(1,:)',X(2,:)',c,'facealpha',f_al);
 else
