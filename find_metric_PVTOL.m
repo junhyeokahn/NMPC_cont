@@ -213,20 +213,12 @@ if (return_metric)
 %         dW_pd_sol = replace(reshape(dW_pd,n,n),dec_List,dec_sol);       
         
         W_upper_mat = replace(W_upper,dec_List,dec_sol);
-%         W_upper_mat = double(W_upper);
-        sdisplay(W_sol)
+        sdisplay(W_sol);
         sdisplay(W_upper_mat);
         pause;
                 
         %% Create functions
-
-        W_cell = cell(n,n);
-        dW_vy_cell = cell(n,n);
-        dW_p_cell = cell(n,n);
-        
-%         dW_vz_cell = cell(n,n);
-%         dW_pd_cell = cell(n,n);
-        
+      
         for i = 1:n
             for j = 1:n
                 W_ij = sdisplay(W_sol(i,j));
@@ -241,48 +233,41 @@ if (return_metric)
 %                 dW_vz_ij = strcat('@(p,vy,vz,pd)',dW_vz_ij{1});
 %                 dW_pd_ij = strcat('@(p,vy,vz,pd)',dW_pd_ij{1});
                 
-                W_cell{i,j} = str2func(W_ij);
-                dW_vy_cell{i,j} = str2func(dW_vy_ij);
-                dW_p_cell{i,j} = str2func(dW_p_ij);
-%                 dW_vz_cell{i,j} = str2func(dW_vz_ij);
-%                 dW_pd_cell{i,j} = str2func(dW_pd_ij);
+                eval(sprintf('W_%d%d_fnc = str2func(W_ij);',i,j));
+                eval(sprintf('dW_vy_%d%d_fnc = str2func(dW_vy_ij);',i,j));
+                eval(sprintf('dW_p_%d%d_fnc = str2func(dW_p_ij);',i,j));
             end
         end
-        W_mat = @(x) [W_cell{1,1}(x(3),x(4)), W_cell{1,2}(x(3),x(4)), W_cell{1,3}(x(3),x(4)), W_cell{1,4}(x(3),x(4)), W_cell{1,5}(x(3),x(4)), W_cell{1,6}(x(3),x(4));
-                      W_cell{2,1}(x(3),x(4)), W_cell{2,2}(x(3),x(4)), W_cell{2,3}(x(3),x(4)), W_cell{2,4}(x(3),x(4)), W_cell{2,5}(x(3),x(4)), W_cell{2,6}(x(3),x(4));
-                      W_cell{3,1}(x(3),x(4)), W_cell{3,2}(x(3),x(4)), W_cell{3,3}(x(3),x(4)), W_cell{3,4}(x(3),x(4)), W_cell{3,5}(x(3),x(4)), W_cell{3,6}(x(3),x(4));
-                      W_cell{4,1}(x(3),x(4)), W_cell{4,2}(x(3),x(4)), W_cell{4,3}(x(3),x(4)), W_cell{4,4}(x(3),x(4)), W_cell{4,5}(x(3),x(4)), W_cell{4,6}(x(3),x(4));
-                      W_cell{5,1}(x(3),x(4)), W_cell{5,2}(x(3),x(4)), W_cell{5,3}(x(3),x(4)), W_cell{5,4}(x(3),x(4)), W_cell{5,5}(x(3),x(4)), W_cell{5,6}(x(3),x(4));
-                      W_cell{6,1}(x(3),x(4)), W_cell{6,2}(x(3),x(4)), W_cell{6,3}(x(3),x(4)), W_cell{6,4}(x(3),x(4)), W_cell{6,5}(x(3),x(4)), W_cell{6,6}(x(3),x(4))];
         
-        dW_vy_mat = @(x) [dW_vy_cell{1,1}(x(3),x(4)), dW_vy_cell{1,2}(x(3),x(4)), dW_vy_cell{1,3}(x(3),x(4)), dW_vy_cell{1,4}(x(3),x(4)), dW_vy_cell{1,5}(x(3),x(4)), dW_vy_cell{1,6}(x(3),x(4));
-                          dW_vy_cell{2,1}(x(3),x(4)), dW_vy_cell{2,2}(x(3),x(4)), dW_vy_cell{2,3}(x(3),x(4)), dW_vy_cell{2,4}(x(3),x(4)), dW_vy_cell{2,5}(x(3),x(4)), dW_vy_cell{2,6}(x(3),x(4));
-                          dW_vy_cell{3,1}(x(3),x(4)), dW_vy_cell{3,2}(x(3),x(4)), dW_vy_cell{3,3}(x(3),x(4)), dW_vy_cell{3,4}(x(3),x(4)), dW_vy_cell{3,5}(x(3),x(4)), dW_vy_cell{3,6}(x(3),x(4));
-                          dW_vy_cell{4,1}(x(3),x(4)), dW_vy_cell{4,2}(x(3),x(4)), dW_vy_cell{4,3}(x(3),x(4)), dW_vy_cell{4,4}(x(3),x(4)), dW_vy_cell{4,5}(x(3),x(4)), dW_vy_cell{4,6}(x(3),x(4));
-                          dW_vy_cell{5,1}(x(3),x(4)), dW_vy_cell{5,2}(x(3),x(4)), dW_vy_cell{5,3}(x(3),x(4)), dW_vy_cell{5,4}(x(3),x(4)), dW_vy_cell{5,5}(x(3),x(4)), dW_vy_cell{5,6}(x(3),x(4));
-                          dW_vy_cell{6,1}(x(3),x(4)), dW_vy_cell{6,2}(x(3),x(4)), dW_vy_cell{6,3}(x(3),x(4)), dW_vy_cell{6,4}(x(3),x(4)), dW_vy_cell{6,5}(x(3),x(4)), dW_vy_cell{6,6}(x(3),x(4))];
+        %% Compile into matrix
         
-        dW_p_mat = @(x)  [dW_p_cell{1,1}(x(3),x(4)), dW_p_cell{1,2}(x(3),x(4)), dW_p_cell{1,3}(x(3),x(4)), dW_p_cell{1,4}(x(3),x(4)), dW_p_cell{1,5}(x(3),x(4)), dW_p_cell{1,6}(x(3),x(4));
-                          dW_p_cell{2,1}(x(3),x(4)), dW_p_cell{2,2}(x(3),x(4)), dW_p_cell{2,3}(x(3),x(4)), dW_p_cell{2,4}(x(3),x(4)), dW_p_cell{2,5}(x(3),x(4)), dW_p_cell{2,6}(x(3),x(4));
-                          dW_p_cell{3,1}(x(3),x(4)), dW_p_cell{3,2}(x(3),x(4)), dW_p_cell{3,3}(x(3),x(4)), dW_p_cell{3,4}(x(3),x(4)), dW_p_cell{3,5}(x(3),x(4)), dW_p_cell{3,6}(x(3),x(4));
-                          dW_p_cell{4,1}(x(3),x(4)), dW_p_cell{4,2}(x(3),x(4)), dW_p_cell{4,3}(x(3),x(4)), dW_p_cell{4,4}(x(3),x(4)), dW_p_cell{4,5}(x(3),x(4)), dW_p_cell{4,6}(x(3),x(4));
-                          dW_p_cell{5,1}(x(3),x(4)), dW_p_cell{5,2}(x(3),x(4)), dW_p_cell{5,3}(x(3),x(4)), dW_p_cell{5,4}(x(3),x(4)), dW_p_cell{5,5}(x(3),x(4)), dW_p_cell{5,6}(x(3),x(4));
-                          dW_p_cell{6,1}(x(3),x(4)), dW_p_cell{6,2}(x(3),x(4)), dW_p_cell{6,3}(x(3),x(4)), dW_p_cell{6,4}(x(3),x(4)), dW_p_cell{6,5}(x(3),x(4)), dW_p_cell{6,6}(x(3),x(4))];
+        W_exec = 'W_mat = @(x)[';
+        dW_vy_exec = 'dW_vy_mat = @(x)[';
+        dW_p_exec = 'dW_p_mat = @(x)[';
         
-%         dW_vz_mat = @(x) [dW_vz_cell{1,1}(x(3),x(4)), dW_vz_cell{1,2}(x(3),x(4)), dW_vz_cell{1,3}(x(3),x(4)), dW_vz_cell{1,4}(x(3),x(4)), dW_vz_cell{1,5}(x(3),x(4)), dW_vz_cell{1,6}(x(3),x(4));
-%                           dW_vz_cell{2,1}(x(3),x(4)), dW_vz_cell{2,2}(x(3),x(4)), dW_vz_cell{2,3}(x(3),x(4)), dW_vz_cell{2,4}(x(3),x(4)), dW_vz_cell{2,5}(x(3),x(4)), dW_vz_cell{2,6}(x(3),x(4));
-%                           dW_vz_cell{3,1}(x(3),x(4)), dW_vz_cell{3,2}(x(3),x(4)), dW_vz_cell{3,3}(x(3),x(4)), dW_vz_cell{3,4}(x(3),x(4)), dW_vz_cell{3,5}(x(3),x(4)), dW_vz_cell{3,6}(x(3),x(4));
-%                           dW_vz_cell{4,1}(x(3),x(4)), dW_vz_cell{4,2}(x(3),x(4)), dW_vz_cell{4,3}(x(3),x(4)), dW_vz_cell{4,4}(x(3),x(4)), dW_vz_cell{4,5}(x(3),x(4)), dW_vz_cell{4,6}(x(3),x(4));
-%                           dW_vz_cell{5,1}(x(3),x(4)), dW_vz_cell{5,2}(x(3),x(4)), dW_vz_cell{5,3}(x(3),x(4)), dW_vz_cell{5,4}(x(3),x(4)), dW_vz_cell{5,5}(x(3),x(4)), dW_vz_cell{5,6}(x(3),x(4));
-%                           dW_vz_cell{6,1}(x(3),x(4)), dW_vz_cell{6,2}(x(3),x(4)), dW_vz_cell{6,3}(x(3),x(4)), dW_vz_cell{6,4}(x(3),x(4)), dW_vz_cell{6,5}(x(3),x(4)), dW_vz_cell{6,6}(x(3),x(4))];
-%         
-%         dW_pd_mat = @(x) [dW_pd_cell{1,1}(x(3),x(4)), dW_pd_cell{1,2}(x(3),x(4)), dW_pd_cell{1,3}(x(3),x(4)), dW_pd_cell{1,4}(x(3),x(4)), dW_pd_cell{1,5}(x(3),x(4)), dW_pd_cell{1,6}(x(3),x(4));
-%                           dW_pd_cell{2,1}(x(3),x(4)), dW_pd_cell{2,2}(x(3),x(4)), dW_pd_cell{2,3}(x(3),x(4)), dW_pd_cell{2,4}(x(3),x(4)), dW_pd_cell{2,5}(x(3),x(4)), dW_pd_cell{2,6}(x(3),x(4));
-%                           dW_pd_cell{3,1}(x(3),x(4)), dW_pd_cell{3,2}(x(3),x(4)), dW_pd_cell{3,3}(x(3),x(4)), dW_pd_cell{3,4}(x(3),x(4)), dW_pd_cell{3,5}(x(3),x(4)), dW_pd_cell{3,6}(x(3),x(4));
-%                           dW_pd_cell{4,1}(x(3),x(4)), dW_pd_cell{4,2}(x(3),x(4)), dW_pd_cell{4,3}(x(3),x(4)), dW_pd_cell{4,4}(x(3),x(4)), dW_pd_cell{4,5}(x(3),x(4)), dW_pd_cell{4,6}(x(3),x(4));
-%                           dW_pd_cell{5,1}(x(3),x(4)), dW_pd_cell{5,2}(x(3),x(4)), dW_pd_cell{5,3}(x(3),x(4)), dW_pd_cell{5,4}(x(3),x(4)), dW_pd_cell{5,5}(x(3),x(4)), dW_pd_cell{5,6}(x(3),x(4));
-%                           dW_pd_cell{6,1}(x(3),x(4)), dW_pd_cell{6,2}(x(3),x(4)), dW_pd_cell{6,3}(x(3),x(4)), dW_pd_cell{6,4}(x(3),x(4)), dW_pd_cell{6,5}(x(3),x(4)), dW_pd_cell{6,6}(x(3),x(4))];
+        for i = 1:n
+            for j = 1:n
+                if j<n
+                    W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4)), ',i,j));
+                    dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4)), ',i,j));
+                    dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4)), ',i,j));
+                elseif j == n
+                    if i < n
+                        W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4)); ',i,j));
+                        dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4)); ',i,j));
+                        dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4)); ',i,j));
+                    else
+                        W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4))]; ',i,j));
+                        dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4))]; ',i,j));
+                        dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4))]; ',i,j));
+                    end
+                end
+            end
+        end
         
+        eval(W_exec);
+        eval(dW_vy_exec);
+        eval(dW_p_exec);       
     end
 end
 end

@@ -123,7 +123,7 @@ x_eq = [4.5;4.5;0;0;0;0];
 u_eq = [0.5*mass*g; 0.5*mass*g];
 
 T_mpc = 3;
-dt_sim = 1/250;
+dt_sim = 1/500;
 delta = 1;
 N_mpc = 14;
 
@@ -269,7 +269,7 @@ disp(ctrl_opt);
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
 % dt_sim = 1/400;
-t_end = 0.5*Tp;
+t_end = 5*delta;
 solve_t = (0:dt_sim:t_end)';
 T_steps = length(solve_t)-1;
 
