@@ -99,8 +99,8 @@ NMPC_Prob = conAssign(MPC_cost,MPC_grad,MPC_hess,[],...
             [],[],[],[]);
         
         
-NMPC_Prob.SOL.optPar(10) = 1e-2;
-NMPC_Prob.SOL.optPar(12) = 1e-3;
+NMPC_Prob.SOL.optPar(10) = 1e-4;
+NMPC_Prob.SOL.optPar(12) = 1e-4;
         
 NMPC_Prob.user.x_act = zeros(n,1);
 NMPC_Prob.user.D = D;

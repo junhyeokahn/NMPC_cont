@@ -237,7 +237,7 @@ load MPC_WARM.mat;
 
 %% Test MPC solve
 tic
-[MPC_state,~,converged_MPC,mpc_warm,MPC_Prob] = compute_NMPC(MPC_Prob,...
+[MPC_state,~,converged_MPC,mpc_warm,MPC_Prob,~] = compute_NMPC(MPC_Prob,...
     test_state,MP_state(1,:)',state_constr_low,ctrl_constr,MP_state,MP_ctrl,...
     n,m,N_mpc,L_e_mpc,mpc_warm,dt);
 toc
@@ -269,7 +269,7 @@ disp(ctrl_opt);
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
 % dt_sim = 1/400;
-t_end = 5*delta;
+t_end = 10*delta;
 solve_t = (0:dt_sim:t_end)';
 T_steps = length(solve_t)-1;
 
@@ -322,11 +322,11 @@ for i = 1:T_steps
 %         figure(1)
 %         plot(x_act(1:i,1),x_act(1:i,2),'k','linewidth',2);
         
-        tic
-        [MPC_x,MPC_u,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
+%         tic
+        [MPC_x,MPC_u,opt_solved(i,1),mpc_warm,MPC_Prob,ctrl_solve_time(i,1)] = ...
          compute_NMPC(MPC_Prob,state_0,state_0_MPC,state_constr_low,ctrl_constr,MP_state,MP_ctrl,...
             n,m,N_mpc,L_e_mpc,mpc_warm,dt);
-        ctrl_solve_time(i,1) = toc;
+%         ctrl_solve_time(i,1) = toc;
         
         fprintf('%d, %.2f \n', opt_solved(i,1),ctrl_solve_time(i,1));
         
@@ -436,10 +436,11 @@ grid on
 %2D State Plot
 figure()
 hold on
-plot(MP_state(:,1),MP_state(:,2),'b--','linewidth',1.5);
+plot(MP_state(:,1),MP_state(:,2),'g--','linewidth',1);
 for i_mpc = 1:T_steps_MPC
-    plot(MPC_state{i_mpc}(1:(delta/dt),1),MPC_state{i_mpc}(1:(delta/dt),2),'r--','linewidth',2);
+    plot(MPC_state{i_mpc}(:,1),MPC_state{i_mpc}(:,2),'r--','linewidth',1.5);
     Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1,1:2)',30,'k');
+%     pause;
 end
 plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
 
