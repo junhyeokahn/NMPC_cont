@@ -261,7 +261,7 @@ toc;
 disp('opt_control:');disp(converged_aux);
 disp(ctrl_opt);
 
-% pause;
+pause;
 % keyboard;
 
 %% Set up non-linear sim
