@@ -15,7 +15,8 @@ u_L = u_con(:,1);
 u_U = u_con(:,2);
 
 %State cost weighting
-Q = 0*diag([0;0;1;1;1;4]);
+% Q = 0*diag([0;0;1;1;1;4]);
+Q = diag(zeros(n,1));
 
 %Control cost weighting
 R = eye(m);

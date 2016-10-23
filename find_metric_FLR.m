@@ -1,5 +1,10 @@
-function [solved, w_lower, w_upper, W_mat, dW_x1_mat, dW_x2_mat] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
-                    condn, lambda, ccm_eps,return_metric)
+function [solved, w_lower, w_upper, W_mat, dW_x1_mat, dW_x2_mat,W_upper_mat] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
+    condn, lambda, ccm_eps,return_metric)
+
+
+W_scale = diag([0.01; 0.0005; 0.01; 0.0005]);
+% W_scale = diag(zeros(4,1));
+
 sin_x = @(x) 0.5692*(x/pi) - 0.6669*(4*(x/pi)^3 - 3*(x/pi)) + ...
     0.1043*(16*(x/pi)^5 - 20*(x/pi)^3 + 5*(x/pi));
 
@@ -54,6 +59,9 @@ for i = 1:n
     end
 end
 
+W_upper = sdpvar(n);
+dec_List = [dec_List; reshape(W_upper,n*n,1)];
+
 dW_f = jacobian(W(:),[x1,x2,x3,x4])*f;
 dW_f = reshape(dW_f,n,n);
 
@@ -96,14 +104,14 @@ Lc = [Lc_1,Lc_2,Lc_3,Lc_4];%,Lc_5,Lc_6];
 dec_List = [dec_List;cc_1;cc_2;cc_3;cc_4];%cc_5;cc_6];
 
 %W uniform bounds
-W_bounds = [w_lower>=1, w_upper >= w_lower];
+W_bounds = [w_lower>=1, W_upper <= w_upper*eye(n)];
 
 %Condition bound
 W_cond = [w_upper-condn*w_lower <= 0];
 
 %W pos def
 p_low = (delta_4'*W*delta_4 - w_lower*(delta_4'*delta_4)) - Ll*box_lim(1:2);
-p_high = (w_upper*(delta_4'*delta_4) - delta_4'*W*delta_4) - Lu*box_lim(1:2);
+p_high = delta_4'*(W_upper - W)*delta_4 - Lu*box_lim(1:2);
 
 %CCM condition
 R_CCM = -(-dW_f(1:3,1:3) + df_perp*W*B_perp + B_perp'*W*df_perp' + 2*lambda*W(1:3,1:3));
@@ -115,8 +123,8 @@ constr_List = [W_bounds; W_cond; sos(p_low); sos(p_high); sos(p_CCM);
     sos(Lu_1); sos(Lu_2);% sos(Lu_3); sos(Lu_4);
     sos(Lc_1); sos(Lc_2); sos(Lc_3); sos(Lc_4)];% sos(Lc_5); sos(Lc_6)];
 
-options = sdpsettings('solver','mosek','verbose',0);
-SOS_soln = solvesos(constr_List,(1e-4)*norm(dec_List,1),options, dec_List);
+options = sdpsettings('solver','mosek','verbose',return_metric);
+SOS_soln = solvesos(constr_List,trace(W_scale*W_upper) + (1e-3)*norm(dec_List,1),options, dec_List);
 
 solved = SOS_soln.problem;
 w_lower = double(w_lower);
@@ -125,6 +133,7 @@ w_upper = double(w_upper);
 W_mat = zeros(4);
 dW_x1_mat = zeros(4);
 dW_x2_mat = zeros(4);
+W_upper_mat = zeros(4);
 
 if (return_metric)
     if (solved==0)
@@ -138,44 +147,54 @@ if (return_metric)
         dW_x2 = jacobian(W(:),x2);
         dW_x2_sol = replace(reshape(dW_x2,n,n),dec_List,dec_sol);
         
+        W_upper_mat = replace(W_upper,dec_List,dec_sol);
+        
         sdisplay(W_sol)
         pause;
-                
+        
         %% Create functions
-
-        W_cell = cell(4,4);
-        dW_x1_cell = cell(4,4);
-%         dW_x2_cell = cell(4,4);
         
         for i = 1:4
             for j = 1:4
                 W_ij = sdisplay(W_sol(i,j));
                 dW_x1_ij = sdisplay(dW_x1_sol(i,j));
-%                 dW_x2_ij = sdisplay(dW_x2_sol(i,j));
+                dW_x2_ij = sdisplay(dW_x2_sol(i,j));
                 
                 W_ij = strcat('@(x1)',W_ij{1});
                 dW_x1_ij = strcat('@(x1)',dW_x1_ij{1});
-%                 dW_x2_ij = strcat('@(x1,x2)',dW_x2_ij{1});
+                dW_x2_ij = strcat('@(x1,x2)',dW_x2_ij{1});
                 
-                W_cell{i,j} = str2func(W_ij);
-                dW_x1_cell{i,j} = str2func(dW_x1_ij);
-%                 dW_x2_cell{i,j} = str2func(dW_x2_ij);
+                eval(sprintf('W_%d%d_fnc = str2func(W_ij);',i,j));
+                eval(sprintf('dW_x1_%d%d_fnc = str2func(dW_x1_ij);',i,j));
+                eval(sprintf('dW_x2_%d%d_fnc = str2func(dW_x2_ij);',i,j));
             end
         end
-        W_mat = @(x) [W_cell{1,1}(x(1)), W_cell{1,2}(x(1)), W_cell{1,3}(x(1)), W_cell{1,4}(x(1));
-                      W_cell{2,1}(x(1)), W_cell{2,2}(x(1)), W_cell{2,3}(x(1)), W_cell{2,4}(x(1));
-                      W_cell{3,1}(x(1)), W_cell{3,2}(x(1)), W_cell{3,3}(x(1)), W_cell{3,4}(x(1));
-                      W_cell{4,1}(x(1)), W_cell{4,2}(x(1)), W_cell{4,3}(x(1)), W_cell{4,4}(x(1))];
+        W_exec = 'W_mat = @(x)[';
+        dW_x1_exec = 'dW_x1_mat = @(x)[';
+        dW_x2_exec = 'dW_x2_mat = @(x)[';
         
-        dW_x1_mat = @(x) [dW_x1_cell{1,1}(x(1)), dW_x1_cell{1,2}(x(1)), dW_x1_cell{1,3}(x(1)), dW_x1_cell{1,4}(x(1));
-                          dW_x1_cell{2,1}(x(1)), dW_x1_cell{2,2}(x(1)), dW_x1_cell{2,3}(x(1)), dW_x1_cell{2,4}(x(1));
-                          dW_x1_cell{3,1}(x(1)), dW_x1_cell{3,2}(x(1)), dW_x1_cell{3,3}(x(1)), dW_x1_cell{3,4}(x(1));
-                          dW_x1_cell{4,1}(x(1)), dW_x1_cell{4,2}(x(1)), dW_x1_cell{4,3}(x(1)), dW_x1_cell{4,4}(x(1))];
+        for i = 1:4
+            for j = 1:4
+                if j<n
+                    W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(1)),',i,j));
+                    dW_x1_exec = strcat(dW_x1_exec,sprintf('dW_x1_%d%d_fnc(x(1)),',i,j));
+                    dW_x2_exec = strcat(dW_x2_exec,sprintf('dW_x2_%d%d_fnc(x(1),x(2)),',i,j));
+                elseif j==n
+                    if i<n
+                        W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(1));',i,j));
+                        dW_x1_exec = strcat(dW_x1_exec,sprintf('dW_x1_%d%d_fnc(x(1));',i,j));
+                        dW_x2_exec = strcat(dW_x2_exec,sprintf('dW_x2_%d%d_fnc(x(1),x(2));',i,j));
+                    else
+                        W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(1))];',i,j));
+                        dW_x1_exec = strcat(dW_x1_exec,sprintf('dW_x1_%d%d_fnc(x(1))];',i,j));
+                        dW_x2_exec = strcat(dW_x2_exec,sprintf('dW_x2_%d%d_fnc(x(1),x(2))];',i,j));
+                    end
+                end
+            end
+        end
         
-%         dW_x2_mat = @(x) [dW_x2_cell{1,1}(x(1)), dW_x2_cell{1,2}(x(1)), dW_x2_cell{1,3}(x(1)), dW_x2_cell{1,4}(x(1));
-%                           dW_x2_cell{2,1}(x(1)), dW_x2_cell{2,2}(x(1)), dW_x2_cell{2,3}(x(1)), dW_x2_cell{2,4}(x(1));
-%                           dW_x2_cell{3,1}(x(1)), dW_x2_cell{3,2}(x(1)), dW_x2_cell{3,3}(x(1)), dW_x2_cell{3,4}(x(1));
-%                           dW_x2_cell{4,1}(x(1)), dW_x2_cell{4,2}(x(1)), dW_x2_cell{4,3}(x(1)), dW_x2_cell{4,4}(x(1))];
+        eval(W_exec); eval(dW_x1_exec); eval(dW_x2_exec);
+        
     end
 end
 end

@@ -112,10 +112,10 @@ lambda = 2.5;
 condn = 379;
 return_metric = 1;
 
-[sos_prob, w_lower, w_upper,W_mat, dW_x1_mat, dW_x2_mat] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
+[sos_prob, w_lower, w_upper,W_mat, dW_x1_mat, dW_x2_mat,W_upper] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
                                 condn,lambda,ccm_eps,return_metric);
 
-save('metric_FLR.mat','W_mat','dW_x1_mat');
+save('metric_FLR.mat','W_mat','dW_x1_mat','W_upper');
 
 %% Compute aux control bound
 
@@ -165,8 +165,9 @@ for i = 1:length(x2_range)
             F = -dW_x1_mat(x)*f(1) + ...
                 df*W + W*df' + 2*lambda*W;
             
+            delta_u_den = eig((inv(L))'*(B*B')*inv(L));
             delta_u(i,j,k) = 0.5*max(eig((inv(L))'*F*inv(L)))/...
-                sqrt(max(eig((inv(L))'*(B*B')*inv(L))));
+                    sqrt(min(delta_u_den(delta_u_den>0)));
             
             R_CCM = -B_perp'*F*B_perp;
             
@@ -177,11 +178,12 @@ for i = 1:length(x2_range)
     end
 end
 d_bar = max(sigma_ThBw(:))/lambda;
+disp('d_bar'); disp(d_bar);
+disp('euc_bound'); disp(d_bar*sqrt(w_upper));
 disp('Control:'); disp(max(d_bar*delta_u(:)));
 disp('W:'); disp(min(min(eig_W(:,:,1))));
 disp(max(max(eig_W(:,:,2))));
-disp('CCM:'); disp(min(min(min(eig_CCM))));
-disp('Th_Bw:'); disp(max(max(sigma_ThBw)));
+disp('CCM:'); disp(min(eig_CCM(:)));
 
 
 %% CVX approx method

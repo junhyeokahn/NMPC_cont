@@ -1,9 +1,6 @@
-function [NMPC_state,NMPC_ctrl,converged,warm,Prob,solve_t] = ...
+function [NMPC_state,NMPC_ctrl,converged,warm,Prob] = ...
     compute_NMPC(Prob,act_p,~,state_constr,ctrl_constr,MP_state,MP_ctrl,...
     n,m,N,L_e,warm,dt)
-
-% global X_ACT;
-% global X_EQ;
 
 %Solution guess
 if (~warm.sol)
@@ -114,12 +111,6 @@ else
     x_term = MP_state(i_end,:)';
 end
 
-
-% init_guess = (reshape(x0,n,N+1))';
-% figure(1)
-% plot(init_guess(:,1),init_guess(:,2),'g-','linewidth',1.5);
-% pause;
-
 Prob.user.x_act = act_p;
 
 Prob.user.x_eq = x_term;
@@ -134,9 +125,7 @@ if ~Prob.CHECK
     Prob = ProbCheck(Prob,'snopt');
 end
 
-tic
 Result = snoptTL(Prob);
-solve_t = toc;
 
 converged = Result.Inform; %GOOD: {1,2,3}
 
@@ -162,9 +151,5 @@ warm.result = Result;
 warm.state = x_nom;
 warm.ctrl = u_nom;
 
-% figure(1)
-% children = get(gca,'children'); delete(children(1));
-% plot(NMPC_state(:,1),NMPC_state(:,2),'r-','linewidth',1.5);
-% pause;
 
 end
