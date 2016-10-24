@@ -24,33 +24,33 @@ if (~warm.sol)
     end
 else
     %Find: desired (real) time points to evaluate previous soln
-    tau = (1/2)*(warm.Tp*warm.s_t+warm.Tp) ;
-    state_prev = warm.state(tau >= warm.shift,:);
-    ctrl_prev = warm.ctrl(tau >= warm.shift,:);
-    N_prev = length(state_prev);
-    
-    x0 = zeros((N+1)*n,1);
-    u0 = zeros((N+1)*m,1);
-    for k = 1:N_prev
-        x_prev = state_prev(k,:)';
-        for i = 1:n
-            if abs(x_prev(i)) >= abs(state_constr(i));
-                x_prev(i) = 0.98*sign(x_prev(i))*abs(state_constr(i));
-            end
-        end
-        x0(1+(k-1)*n:k*n) = x_prev;
-        
-        u_prev = ctrl_prev(k,:)';
-        for j = 1:m
-            if (u_prev(j) <= ctrl_constr(j,1))
-                u_prev(j) = ctrl_constr(j,1);
-            elseif (u_prev(j) >= ctrl_constr(j,2))
-                u_prev(j) = ctrl_constr(j,2);
-            end
-        end
-        u0(1+(k-1)*m:k*m) = u_prev;
-    end
-           
+%     tau = (1/2)*(warm.Tp*warm.s_t+warm.Tp) ;
+%     state_prev = warm.state(tau >= warm.shift,:);
+%     ctrl_prev = warm.ctrl(tau >= warm.shift,:);
+%     N_prev = length(state_prev);
+%     
+%     x0 = zeros((N+1)*n,1);
+%     u0 = zeros((N+1)*m,1);
+%     for k = 1:N_prev
+%         x_prev = state_prev(k,:)';
+%         for i = 1:n
+%             if abs(x_prev(i)) >= abs(state_constr(i));
+%                 x_prev(i) = 0.98*sign(x_prev(i))*abs(state_constr(i));
+%             end
+%         end
+%         x0(1+(k-1)*n:k*n) = x_prev;
+%         
+%         u_prev = ctrl_prev(k,:)';
+%         for j = 1:m
+%             if (u_prev(j) <= ctrl_constr(j,1))
+%                 u_prev(j) = ctrl_constr(j,1);
+%             elseif (u_prev(j) >= ctrl_constr(j,2))
+%                 u_prev(j) = ctrl_constr(j,2);
+%             end
+%         end
+%         u0(1+(k-1)*m:k*m) = u_prev;
+%     end
+%            
 %     In = eye(n);
 %     for i = 1:n
 %         x0 = x0 + kron([zeros(1,N_prev),...
@@ -64,17 +64,18 @@ else
 %     end    
 end
 
+%Update constraint information
+Prob.user.x_act = act_p;
+
+%Recall warm solution
 if (warm.sol)
     Prob = WarmDefSOL('snopt',Prob,warm.result);
 end
 
-Prob = modify_x_0(Prob,[x0;u0]);
-Prob.user.x_act = act_p;
 
 Prob = ProbCheck(Prob,'snopt');
 
 Result = snoptTL(Prob);
-% Result = warm.result;
 
 converged = Result.Inform; %GOOD: {1,2,3}
 

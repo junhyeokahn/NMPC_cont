@@ -111,14 +111,13 @@ else
     x_term = MP_state(i_end,:)';
 end
 
+%Update constraint information
 Prob.user.x_act = act_p;
-
 Prob.user.x_eq = x_term;
 
+%Recall warm solution
 if (warm.sol)
       Prob = WarmDefSOL('snopt',Prob,warm.result);
-%       Prob.SOL.xs(1:(N+1)*(n+m)) = [x0;u0];
-%     Prob = modify_x_0(Prob,[x0;u0]);
 end
 
 if ~Prob.CHECK
