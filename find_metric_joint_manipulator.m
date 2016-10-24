@@ -128,7 +128,7 @@ B_perp = [eye(3); zeros(1,3)];
 
 % d_bar = sqrt(double(1/w_lower))/lambda; %normalized
 
-ctrl_N = 10;
+ctrl_N = 15;
 x1_range = linspace(-x1_lim, x1_lim, ctrl_N);
 x2_range = linspace(-x2_lim, x2_lim, ctrl_N);
 x3_range = linspace(-x3_lim, x3_lim, ctrl_N);
