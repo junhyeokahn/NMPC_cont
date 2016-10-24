@@ -1,7 +1,7 @@
 clear all; close all; clc;
 warning('off','MATLAB:nargchk:deprecated');
          
-%% Load system
+%% Load non-linear system
 
 load_PVTOL_config;
 
