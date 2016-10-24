@@ -1,6 +1,6 @@
 function   setup_geodesic_MPC(n,N,W,dW,n_W)
 
-K = 2;
+K = 6;
 K_e = 2;
 
 %Obtain Chebyschev Pseudospectral Numerics

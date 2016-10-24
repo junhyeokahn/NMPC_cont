@@ -7,7 +7,7 @@ load_FLR_config;
 
 %% Setup Geodesic numerics
 
-geodesic_N = 2;
+geodesic_N = 3;
 
 setup_geodesic_MPC(n,geodesic_N,W_mat,dW_fnc,n_W); %initializes geodesic_MPC struct
 global geodesic_MPC;
@@ -26,12 +26,12 @@ geo_warm = struct('sol',0,'result',[]);
 
 % FLR:
 Tp = 5;
-dt = 1/400;
+dt = 0.001;
 N_mp = 50;
 
 
 T_mpc = 0.5;
-dt_sim = 1/200;
+dt_sim = 0.005;
 delta = 1;
 N_mpc = 14;
 

@@ -1,7 +1,7 @@
 function [geo_Prob,K_e,T_e,T_dot_e,Aeq] = ...
     setup_geodesic_calc(n,N,W,dW,n_W)
 
-K = 2;
+K = 6;
 K_e = 2;
 
 %Obtain Chebyschev Pseudospectral Numerics

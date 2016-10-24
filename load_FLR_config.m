@@ -65,7 +65,7 @@ alpha = 1e-3;
 %% Simulation constraints
 
 state_constr_low = -[pi;5;pi;5]+euc_bound;
-ctrl_constr = [-35, 35];
+ctrl_constr = [-35+ctrl_bound, 35-ctrl_bound];
            
 q_eq = 0*(pi/180);
 th_eq = q_eq - (mass*g*l/sigma)*sin(q_eq);
