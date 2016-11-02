@@ -9,7 +9,7 @@ load_PVTOL_config;
 %% Setup Geodesic numerics
 
 %PVTOL
-geodesic_N = 4;
+geodesic_N = 2;
 %FLR
 % geodesic_N = 3;
 
@@ -35,7 +35,7 @@ N_mp = 120;
 
 
 T_mpc = 3;
-dt_sim = 0.005;
+dt_sim = 0.002;
 delta = 1;
 N_mpc = 14;
 
@@ -78,7 +78,7 @@ toc;
 disp('Geo dist: ');disp(converged_geo);
 disp(sqrt(J_opt));
 geo_Prob.CHECK = 1;
-geo_warm.sol = 0;
+geo_warm.sol = 1;
 geo_warm.result = geo_result;
 
 tic
@@ -98,31 +98,31 @@ geodesic_MPC.warm.result = geo_result_MPC;
 
 %% Setup MPC numerics
 
-% [MPC_Prob,L_e,L_e_mpc,MPC_st] = setup_NMPC(n,m,...
-%     f,B,df, state_constr_low,ctrl_constr,...
-%     N_mpc,T_mpc,delta,dt,...
-%     P,alpha,d_bar^2,...
-%     x_eq,obs_mpc,'MPC');
-% 
-% load MPC_WARM_PVTOL.mat;
+[MPC_Prob,L_e,L_e_mpc,MPC_st] = setup_NMPC(n,m,...
+    f,B,df, state_constr_low,ctrl_constr,...
+    N_mpc,T_mpc,delta,dt,...
+    P,alpha,d_bar^2,...
+    x_eq,obs_mpc,'MPC');
+
+load MPC_WARM_PVTOL.mat;
 
 % mpc_warm = struct('Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
 %                   's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
 
 %% Test MPC solve
-% tic
-% [MPC_state,~,converged_MPC,mpc_warm,MPC_Prob] = compute_NMPC(MPC_Prob,...
-%     test_state,MP_state(1,:)',state_constr_low,ctrl_constr,MP_state,MP_ctrl,...
-%     n,m,N_mpc,L_e_mpc,mpc_warm,dt);
-% toc
-% disp('MPC:');disp(converged_MPC);
-% 
-% MPC_Prob.CHECK = 1;
-% mpc_warm.sol = 1;
-% save('MPC_WARM_PVTOL.mat','mpc_warm');
-% 
-% figure(1)
-% plot(MPC_state(:,1),MPC_state(:,2),'r-','linewidth',2);
+tic
+[MPC_state,~,converged_MPC,mpc_warm,MPC_Prob] = compute_NMPC(MPC_Prob,...
+    test_state,MP_state(1,:)',state_constr_low,ctrl_constr,MP_state,MP_ctrl,...
+    n,m,N_mpc,L_e_mpc,mpc_warm,dt);
+toc
+disp('MPC:');disp(converged_MPC);
+
+MPC_Prob.CHECK = 1;
+mpc_warm.sol = 1;
+save('MPC_WARM_PVTOL.mat','mpc_warm');
+
+figure(1)
+plot(MPC_state(:,1),MPC_state(:,2),'r-','linewidth',2);
                 
 %% Setup Auxiliary controller
 aux_Prob = setup_opt_aux(m);
