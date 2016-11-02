@@ -3,15 +3,15 @@ warning('off','MATLAB:nargchk:deprecated');
          
 %% Load non-linear system
 
-% load_FLR_config;
-load_PVTOL_config;
+load_FLR_config;
+% load_PVTOL_config;
 
 %% Setup Geodesic numerics
 
 %PVTOL
-geodesic_N = 4;
+% geodesic_N = 4;
 %FLR
-% geodesic_N = 3;
+geodesic_N = 3;
 
 setup_geodesic_MPC(n,geodesic_N,W_mat,dW_fnc,n_W); %initializes geodesic_MPC struct
 global geodesic_MPC;
@@ -24,18 +24,18 @@ geo_warm = struct('sol',0,'result',[]);
 %% Setup MP numerics
 
 % PVTOL:
-Tp = 28;
-dt = 0.001;
-N_mp = 120;
+% Tp = 28;
+% dt = 0.001;
+% N_mp = 120;
 
 % FLR:
-% Tp = 7;
-% dt = 0.001;
-% N_mp = 70;
+Tp = 7;
+dt = 0.001;
+N_mp = 70;
 
 
 T_mpc = 3;
-dt_sim = 0.005;
+dt_sim = 0.002;
 delta = 1;
 N_mpc = 14;
 
@@ -46,7 +46,7 @@ N_mpc = 14;
     P,alpha,(0.98*d_bar)^2,...
     x_eq,obs,'MP');
 
-load MP_WARM_PVTOL.mat;
+load MP_WARM_FLR.mat;
 % mp_warm = struct('Tp',Tp,'shift',0,'sol',0,...
 %                   's_t',MP_st,'state',[],'ctrl',[],'result',[]);
 
@@ -60,12 +60,12 @@ toc
 disp('MP:'); disp(converged_MP);
 
 mp_warm.sol = 1;
-save('MP_WARM_PVTOL.mat','mp_warm');
+save('MP_WARM_FLR.mat','mp_warm');
 
 %% Visualize
 
-% visualize_FLR;
-visualize_PVTOL;
+visualize_FLR;
+% visualize_PVTOL;
 
 %% Test Geodesic Numerics
 
@@ -140,7 +140,7 @@ disp(ctrl_opt);
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
 % dt_sim = 1/400;
-t_end = 10;
+t_end = Tp;
 solve_t = (0:dt_sim:t_end)';
 T_steps = length(solve_t)-1;
 
@@ -294,12 +294,12 @@ else
         True_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = u_nom+kron(ones((dt_sim/dt)+1,1),Aux_ctrl(i,:));
         Nom_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = u_nom;
         
-        %Disturbance model
+        %Simulate Optimal
 %         dist_dir = (X_dot(:,geo_Ke+1))'*(W_mat(state_0)\eye(n))*B_w;
 %         w_dist(i,:) = w_max*(dist_dir/norm(dist_dir));
 %         w_dist(i,:) = -(w_max/sqrt(2))*[1,1];
         w_dist(i,:) = w_max*[cos(x_act(i,3));
-                            -sin(x_act(i,3))]';
+            -sin(x_act(i,3))]';
         
         [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,[solve_t(i):dt:solve_t(i+1)]',u_nom,Aux_ctrl(i,:),...
             f_true,B_true,B_w_true,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state_0,ode_options);
@@ -311,8 +311,8 @@ end
 
 %% Plots
 
-% plot_FLR;
-plot_PVTOL;
+plot_FLR;
+% plot_PVTOL;
 
 %% Evaluate cost
 

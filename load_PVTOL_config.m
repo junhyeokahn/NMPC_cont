@@ -63,6 +63,10 @@ df = @(x) [0,0,-x(4)*sin(x(3))-x(5)*cos(x(3)),cos(x(3)),-sin(x(3)),0;
 B_w = [zeros(1,3),1,0,0;
        zeros(1,3),0,1,0]';
    
+f_true = f;
+B_true = B;
+B_w_true = B_w;
+   
 %% Bounds
 
 w_max = 0.1;

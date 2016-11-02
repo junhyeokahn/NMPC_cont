@@ -42,14 +42,16 @@ grid on
 figure()
 hold on
 plot(MP_state(:,1),MP_state(:,2),'g--','linewidth',1);
-for i_mpc = 1:T_steps_MPC
-    plot(MPC_state{i_mpc}(1:round(T_mpc/dt)+1,1),MPC_state{i_mpc}(1:round(T_mpc/dt)+1,2),'r--','linewidth',1.5);
-    Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1,1:2)',30,'k');
-    Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'k');
-%     for j = 1:round((T_mpc/2)/dt):round(T_mpc/dt)+1
-%         Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(j,1:2)',30,'k');
-%     end
-%     pause;
+if (~track_traj)
+    for i_mpc = 1:T_steps_MPC
+        plot(MPC_state{i_mpc}(1:round(delta/dt)+1,1),MPC_state{i_mpc}(1:round(delta/dt)+1,2),'r--','linewidth',1.5);
+        Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1,1:2)',30,'k');
+        Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'k');
+    end
+else
+    for i = 1:round(delta/dt_sim):length(solve_t)
+        Ellipse_plot(M_ccm_pos,MP_state(1+(i-1)*(dt_sim/dt),1:2),30,'k');
+    end
 end
 plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
 plot(x_act(1:round(delta/dt_sim):end,1),x_act(1:round(delta/dt_sim):end,2),'ko','markersize',7,'markerfacecolor','k');

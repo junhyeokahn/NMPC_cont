@@ -29,8 +29,8 @@ sigma = 100;
 J = 1;
 b = 1;
 g = 9.81;
-len = 0.25;
 
+%Dynamics for synthesis
 f  = @(x) [x(2);
           (mass*g*l/I)*sin(x(1)) - (sigma/I)*(x(1)-x(3));
            x(4);
@@ -45,6 +45,24 @@ df = @(x) [0, 1, 0, 0;
 
 B_w = [0, (1/I), 0, 0;
        0, 0, 0, (1/J)]';
+
+%True Dynamics   
+mass_true = 0.5 + 1*rand(1);
+I_true = (1/3)*mass_true*(2*l)^2;
+sigma_true = 80 + (120-80)*rand(1);
+J_true = J;
+
+f_true = @(x) [x(2);
+          (mass_true*g*l/I_true)*sin(x(1)) - (sigma_true/I_true)*(x(1)-x(3));
+           x(4);
+           (sigma_true/J_true)*(x(1)-x(3)) - (b/J)*x(4)];
+B_true =  [zeros(3,1);1/J_true];
+B_w_true = [0,(1/I_true), 0, 0;
+            0, 0, 0, (1/J_true)]';
+% f_true = f;
+% B_true = B;
+% B_w_true = B_w;
+
    
 %% Bounds
 
@@ -78,3 +96,27 @@ test_state = [link_ang;
               -30*(pi/180);
               mot_ang;
               0];
+          
+%% Design FL controller
+
+phi = @(x) [x(1); 
+            x(2);
+            (mass*g*l/I)*sin(x(1)) - (sigma/I)*(x(1)-x(3));
+           ((mass*g*l/I)*cos(x(1)) - (sigma/I))*x(2) + (sigma/I)*x(4)];
+       
+f_tilde_xi = @(xi) -(mass*g*l/I)*sin(xi(1))*(xi(2)^2) + (mass*g*l/I)*cos(xi(1))*xi(3) - (sigma/I)*xi(3);
+f_tilde_x = @(x) (sigma/I)*((sigma/J)*(x(1)-x(3)) - (b/J)*x(4));
+
+f_tilde = @(x) f_tilde_x(x) + f_tilde_xi(phi(x));
+B_tilde = (sigma/I)*(1/J);
+
+% Compute beforehand
+Ac = [zeros(3,1), eye(3); zeros(1,4)];
+Bc = [zeros(3,1);1];
+% [K_FL, M_FL, E_FL] = lqr(Ac,Bc,diag(10*[2000;1000;2000;1000]),1);
+K_FL = place(Ac,Bc,-[4;5;6;7]);
+
+
+
+
+
