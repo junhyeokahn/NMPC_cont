@@ -166,7 +166,7 @@ for i = 1:length(p_range)
             for l = 1:length(pd_range)
                 x = [0;0;p_range(i);vy_range(j);vz_range(k);pd_range(l)];
                 
-                W = symmetric(W_mat(x));
+                W = W_mat(x);
                 M = W\eye(n);
                 Theta = chol(M);
                 Theta_Bw = Theta*Bw(x);
@@ -176,7 +176,7 @@ for i = 1:length(p_range)
                 
                 f = f_mat(x);
                 df = df_mat(x);
-                F = -symmetric(dW_p_mat(x))*f(1) - symmetric(dW_vy_mat(x))*f(2)-...
+                F = -dW_p_mat(x)*f(1) - dW_vy_mat(x)*f(2)-...
                      dW_vz_mat(x)*f(3) - dW_pd_mat(x)*f(4) + ...
                      df*W + W*df' + 2*lambda*W;
                 
