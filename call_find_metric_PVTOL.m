@@ -108,6 +108,10 @@ save('metric_PVTOL.mat','W_mat','dW_p_mat','dW_vy_mat','W_upper');
 
 disp('Checking CCM conditions and Computing control bound...');
 lambda = 0.998*lambda;
+W_fnc = @(x) symmetric(W_mat(x));
+dW_p_fnc = @(x) symmetric(dW_p_mat(x));
+dW_vy_fnc = @(x) symmetric(dW_vy_mat(x));
+
 dW_vz_mat = @(x) zeros(n);
 dW_pd_mat = @(x) zeros(n);
 
@@ -166,7 +170,7 @@ for i = 1:length(p_range)
             for l = 1:length(pd_range)
                 x = [0;0;p_range(i);vy_range(j);vz_range(k);pd_range(l)];
                 
-                W = W_mat(x);
+                W = W_fnc(x);
                 M = W\eye(n);
                 Theta = chol(M);
                 Theta_Bw = Theta*Bw(x);
@@ -176,7 +180,7 @@ for i = 1:length(p_range)
                 
                 f = f_mat(x);
                 df = df_mat(x);
-                F = -dW_p_mat(x)*f(1) - dW_vy_mat(x)*f(2)-...
+                F = -dW_p_fnc(x)*f(1) - dW_vy_fnc(x)*f(2)-...
                      dW_vz_mat(x)*f(3) - dW_pd_mat(x)*f(4) + ...
                      df*W + W*df' + 2*lambda*W;
                 
