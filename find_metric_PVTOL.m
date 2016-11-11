@@ -220,7 +220,7 @@ if (return_metric)
         %% Create functions
       
         for i = 1:n
-            for j = 1:n
+            for j = i:n
                 W_ij = sdisplay(W_sol(i,j));
                 dW_vy_ij = sdisplay(dW_vy_sol(i,j));
                 dW_p_ij = sdisplay(dW_p_sol(i,j));
@@ -248,9 +248,15 @@ if (return_metric)
         for i = 1:n
             for j = 1:n
                 if j<n
-                    W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4)), ',i,j));
-                    dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4)), ',i,j));
-                    dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4)), ',i,j));
+                    if (j<i)
+                        W_exec = strcat(W_exec,'0,');
+                        dW_p_exec = strcat(dW_p_exec,'0,');
+                        dW_vy_exec = strcat(dW_vy_exec,'0,');
+                    else
+                        W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4)), ',i,j));
+                        dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4)), ',i,j));
+                        dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4)), ',i,j));
+                    end
                 elseif j == n
                     if i < n
                         W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4)); ',i,j));
