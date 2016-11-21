@@ -103,14 +103,18 @@ return_metric = 1;
                                 condn,lambda,ccm_eps,return_metric);
 
 save('metric_PVTOL.mat','W_mat','dW_p_mat','dW_vy_mat','W_upper');
+% load('metric_PVTOL.mat');
 
 %% Compute aux control bound
 
 disp('Checking CCM conditions and Computing control bound...');
 lambda = 0.998*lambda;
-W_fnc = @(x) symmetric(W_mat(x));
-dW_p_fnc = @(x) symmetric(dW_p_mat(x));
-dW_vy_fnc = @(x) symmetric(dW_vy_mat(x));
+% W_fnc = @(x) symmetric(W_mat(x));
+% dW_p_fnc = @(x) symmetric(dW_p_mat(x));
+% dW_vy_fnc = @(x) symmetric(dW_vy_mat(x));
+W_fnc = W_mat;
+dW_p_fnc = dW_p_mat;
+dW_vy_fnc = dW_vy_mat;
 
 dW_vz_mat = @(x) zeros(n);
 dW_pd_mat = @(x) zeros(n);

@@ -45,19 +45,32 @@ dec_List = [];
 
 % w_states = [x1,x2];
 w_states = [x1];
-
 w_order = 2;
-W = sdpvar(n);
-for i = 1:n
-    for j = 1:n
-        if (j>=i)
-            [W(i,j),cp_c] = polynomial(w_states,w_order);
-            dec_List = [dec_List;cp_c];
-        else
-            W(i,j) = W(j,i);
-        end
-    end
+
+w_mono = monolist(w_states,w_order);
+W_list = cell(length(w_mono),1);
+
+W_list{1} = sdpvar(n);
+dec_List = [dec_List;reshape(W_list{1},n*n,1)];
+W = W_list{1}*w_mono(1);
+
+for i = 2:length(w_mono)
+    W_list{i} = sdpvar(n);
+    dec_List = [dec_List;reshape(W_list{i},n*n,1)];
+    W = W + W_list{i}*w_mono(i);
 end
+
+% W = sdpvar(n);
+% for i = 1:n
+%     for j = 1:n
+%         if (j>=i)
+%             [W(i,j),cp_c] = polynomial(w_states,w_order);
+%             dec_List = [dec_List;cp_c];
+%         else
+%             W(i,j) = W(j,i);
+%         end
+%     end
+% end
 
 W_upper = sdpvar(n);
 dec_List = [dec_List; reshape(W_upper,n*n,1)];
@@ -69,7 +82,7 @@ dW_f = reshape(dW_f,n,n);
 
 %Lagrange multipliers
 box_lim = [x1+x1_lim; x1_lim-x1;
-           x2+x2_lim; x2_lim-x2];
+    x2+x2_lim; x2_lim-x2];
 %            x3+x3_lim; x3_lim-x3];
 
 delta_4 = sdpvar(4,1);
@@ -139,60 +152,110 @@ if (return_metric)
     if (solved==0)
         disp('feasible, getting results...');
         dec_sol = clean(double(dec_List),1e-3);
-        W_sol = replace(W,dec_List,dec_sol);
         
-        dW_x1 = jacobian(W(:),x1);
-        dW_x1_sol = replace(reshape(dW_x1,n,n),dec_List,dec_sol);
+        %         W_sol = replace(W,dec_List,dec_sol);
+        %
+        %         dW_x1 = jacobian(W(:),x1);
+        %         dW_x1_sol = replace(reshape(dW_x1,n,n),dec_List,dec_sol);
+        %
+        %         dW_x2 = jacobian(W(:),x2);
+        %         dW_x2_sol = replace(reshape(dW_x2,n,n),dec_List,dec_sol);
         
-        dW_x2 = jacobian(W(:),x2);
-        dW_x2_sol = replace(reshape(dW_x2,n,n),dec_List,dec_sol);
+        W_sol = zeros(n,n,length(w_mono));
+        for i = 1:length(w_mono)
+            W_sol(:,:,i) = replace(W_list{i},dec_List,dec_sol);
+        end
+        
+        dw_mono_x1 = jacobian(w_mono,x1);
+        dw_mono_x2 = jacobian(w_mono,x2);
         
         W_upper_mat = replace(W_upper,dec_List,dec_sol);
         
         sdisplay(W_sol)
         pause;
         
+        %% Create monomial functions
+        for i = 1:length(w_mono)
+            w_mono_i = sdisplay(w_mono(i));
+            dw_mono_x1_i = sdisplay(dw_mono_x1(i));
+            dw_mono_x2_i = sdisplay(dw_mono_x2(i));
+            
+            w_mono_i = strcat('@(x1)',w_mono_i{1});
+            dw_mono_x1_i = strcat('@(x1)',dw_mono_x1_i{1});
+            dw_mono_x2_i = strcat('@(x1,x2)',dw_mono_x2_i{1});
+            
+            eval(sprintf('w_mono_%d_fnc = str2func(w_mono_i);',i));
+            eval(sprintf('dw_mono_x1_%d_fnc = str2func(dw_mono_x1_i);',i));
+            eval(sprintf('dw_mono_x2_%d_fnc = str2func(dw_mono_x2_i);',i));
+        end
+        
         %% Create functions
         
-        for i = 1:4
-            for j = 1:4
-                W_ij = sdisplay(W_sol(i,j));
-                dW_x1_ij = sdisplay(dW_x1_sol(i,j));
-                dW_x2_ij = sdisplay(dW_x2_sol(i,j));
-                
-                W_ij = strcat('@(x1)',W_ij{1});
-                dW_x1_ij = strcat('@(x1)',dW_x1_ij{1});
-                dW_x2_ij = strcat('@(x1,x2)',dW_x2_ij{1});
-                
-                eval(sprintf('W_%d%d_fnc = str2func(W_ij);',i,j));
-                eval(sprintf('dW_x1_%d%d_fnc = str2func(dW_x1_ij);',i,j));
-                eval(sprintf('dW_x2_%d%d_fnc = str2func(dW_x2_ij);',i,j));
+        %         for i = 1:4
+        %             for j = 1:4
+        %                 W_ij = sdisplay(W_sol(i,j));
+        %                 dW_x1_ij = sdisplay(dW_x1_sol(i,j));
+        %                 dW_x2_ij = sdisplay(dW_x2_sol(i,j));
+        %
+        %                 W_ij = strcat('@(x1)',W_ij{1});
+        %                 dW_x1_ij = strcat('@(x1)',dW_x1_ij{1});
+        %                 dW_x2_ij = strcat('@(x1,x2)',dW_x2_ij{1});
+        %
+        %                 eval(sprintf('W_%d%d_fnc = str2func(W_ij);',i,j));
+        %                 eval(sprintf('dW_x1_%d%d_fnc = str2func(dW_x1_ij);',i,j));
+        %                 eval(sprintf('dW_x2_%d%d_fnc = str2func(dW_x2_ij);',i,j));
+        %             end
+        %         end
+        
+        %% Put together
+        W_exec = 'W_mat = @(x)';
+        dW_x1_exec = 'dW_x1_mat = @(x)';
+        dW_x2_exec = 'dW_x2_mat = @(x)';
+        
+        for i = 1:length(w_mono)
+            if i<length(w_mono)
+                W_exec = strcat(W_exec,sprintf('W_sol(:,:,%d)*w_mono_%d_fnc(x(1)) +',i,i));
+            else
+                W_exec = strcat(W_exec,sprintf('W_sol(:,:,%d)*w_mono_%d_fnc(x(1));',i,i));
             end
         end
-        W_exec = 'W_mat = @(x)[';
-        dW_x1_exec = 'dW_x1_mat = @(x)[';
-        dW_x2_exec = 'dW_x2_mat = @(x)[';
-        
-        for i = 1:4
-            for j = 1:4
-                if j<n
-                    W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(1)),',i,j));
-                    dW_x1_exec = strcat(dW_x1_exec,sprintf('dW_x1_%d%d_fnc(x(1)),',i,j));
-                    dW_x2_exec = strcat(dW_x2_exec,sprintf('dW_x2_%d%d_fnc(x(1),x(2)),',i,j));
-                elseif j==n
-                    if i<n
-                        W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(1));',i,j));
-                        dW_x1_exec = strcat(dW_x1_exec,sprintf('dW_x1_%d%d_fnc(x(1));',i,j));
-                        dW_x2_exec = strcat(dW_x2_exec,sprintf('dW_x2_%d%d_fnc(x(1),x(2));',i,j));
-                    else
-                        W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(1))];',i,j));
-                        dW_x1_exec = strcat(dW_x1_exec,sprintf('dW_x1_%d%d_fnc(x(1))];',i,j));
-                        dW_x2_exec = strcat(dW_x2_exec,sprintf('dW_x2_%d%d_fnc(x(1),x(2))];',i,j));
-                    end
-                end
+        for i = 2:length(w_mono)
+            if i<length(w_mono)
+                dW_x1_exec = strcat(dW_x1_exec,sprintf('W_sol(:,:,%d)*dw_mono_x1_%d_fnc(x(1)) +',i,i));
+                dW_x2_exec = strcat(dW_x2_exec,sprintf('W_sol(:,:,%d)*dw_mono_x2_%d_fnc(x(1),x(2)) +',i,i));
+            else
+                dW_x1_exec = strcat(dW_x1_exec,sprintf('W_sol(:,:,%d)*dw_mono_x1_%d_fnc(x(1));',i,i));
+                dW_x2_exec = strcat(dW_x2_exec,sprintf('W_sol(:,:,%d)*dw_mono_x2_%d_fnc(x(1),x(2));',i,i));
             end
         end
+            
+        %% Assemble
         
+        %         W_exec = 'W_mat = @(x)[';
+        %         dW_x1_exec = 'dW_x1_mat = @(x)[';
+        %         dW_x2_exec = 'dW_x2_mat = @(x)[';
+        %
+        %         for i = 1:4
+        %             for j = 1:4
+        %                 if j<n
+        %                     W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(1)),',i,j));
+        %                     dW_x1_exec = strcat(dW_x1_exec,sprintf('dW_x1_%d%d_fnc(x(1)),',i,j));
+        %                     dW_x2_exec = strcat(dW_x2_exec,sprintf('dW_x2_%d%d_fnc(x(1),x(2)),',i,j));
+        %                 elseif j==n
+        %                     if i<n
+        %                         W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(1));',i,j));
+        %                         dW_x1_exec = strcat(dW_x1_exec,sprintf('dW_x1_%d%d_fnc(x(1));',i,j));
+        %                         dW_x2_exec = strcat(dW_x2_exec,sprintf('dW_x2_%d%d_fnc(x(1),x(2));',i,j));
+        %                     else
+        %                         W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(1))];',i,j));
+        %                         dW_x1_exec = strcat(dW_x1_exec,sprintf('dW_x1_%d%d_fnc(x(1))];',i,j));
+        %                         dW_x2_exec = strcat(dW_x2_exec,sprintf('dW_x2_%d%d_fnc(x(1),x(2))];',i,j));
+        %                     end
+        %                 end
+        %             end
+        %         end
+        
+        %% Execute
         eval(W_exec); eval(dW_x1_exec); eval(dW_x2_exec);
         
     end

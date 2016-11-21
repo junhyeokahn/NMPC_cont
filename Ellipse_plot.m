@@ -114,7 +114,7 @@ if strcmp(Type,'2D'),
     axis equal, grid
     patch(X(1,:)',X(2,:)',c,'facealpha',f_al);
 else
-    mesh(XX,YY,ZZ);
+    mesh(XX,YY,ZZ); colormap('winter');
     axis equal
     hidden off
 end

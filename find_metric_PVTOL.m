@@ -1,7 +1,7 @@
 function [solved,w_lower,w_upper,W_mat,dW_p_mat,dW_vy_mat,dW_vz_mat,dW_pd_mat,W_upper_mat] = ...
- find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+    find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
     condn,lambda,ccm_eps,return_metric)
-%% 
+%%
 
 
 % W_scale = diag([0.02;0.0268;0.0367;0.0089;0.02;0.02]);
@@ -35,75 +35,93 @@ cos_p = cos_x(p);
 
 %dynamics f
 f = [vy*cos_p - vz*sin_p;
-     vy*sin_p + vz*cos_p;
-     pd;
-     pd*vz-g*sin_p;
-     -pd*vy-g*cos_p;
-     0];
+    vy*sin_p + vz*cos_p;
+    pd;
+    pd*vz-g*sin_p;
+    -pd*vy-g*cos_p;
+    0];
 
 %          Y Z  p                  vy    vz   pd
 df_perp = [0,0,-vy*sin_p-vz*cos_p,cos_p,-sin_p,0;
-           0,0, vy*cos_p-vz*sin_p,sin_p,cos_p,0;
-           0,0,0,0,0,1;
-           0,0,-g*cos_p,0,pd,vz];
+    0,0, vy*cos_p-vz*sin_p,sin_p,cos_p,0;
+    0,0,0,0,0,1;
+    0,0,-g*cos_p,0,pd,vz];
 
 B_perp = [eye(4);
-          zeros(2,4)];
+    zeros(2,4)];
 
 %Initialize decision variables
 dec_List = [];
 
 %% Parametrize W (2)
 
-% w_states = [vy, p];
+w_mono = monolist([p, vy], 4);
+N_mono_2 = length(monolist([p,vy],2));
 
-w_order = 2;
-% W = sdpvar(6);
-% for i = 1:n
-%     for j = 1:n
+W_list = cell(length(w_mono),1);
+W_perp_list = cell(length(w_mono),1);
+W_pc_list = cell(length(w_mono),1);
+W_c_list = cell(length(w_mono),1);
+
+W_perp_list{1} = sdpvar(4);
+W_pc_list{1} = sdpvar(4,2);
+W_c_list{1} = sdpvar(2);
+W_list{1} = [W_perp_list{1},W_pc_list{1};
+             W_pc_list{1}', W_c_list{1}];
+dec_List = [dec_List;reshape(W_list{1},n*n,1)];
+W = W_list{1}*w_mono(1);
+
+for i = 2:length(w_mono)
+    W_perp_list{i} = sdpvar(4);
+    if i<=N_mono_2
+        W_pc_list{i} = sdpvar(4,2);
+        W_c_list{i} = sdpvar(2);
+    else
+        W_pc_list{i} = zeros(4,2);
+        W_c_list{i} = zeros(2);
+    end
+    W_list{i} = [W_perp_list{i},W_pc_list{i};
+                 W_pc_list{i}', W_c_list{i}];
+    dec_List = [dec_List;reshape(W_list{i},n*n,1)];
+    W = W + W_list{i}*w_mono(i);
+end
+
+% W_perp = sdpvar(4);
+% for i = 1:4
+%     for j = 1:4
 %         if (j>=i)
-%             [W(i,j),cp_c] = polynomial([p,vy],w_order);
+%             [W_perp(i,j),cp_c] = polynomial([p,vy],4);
 %             dec_List = [dec_List;cp_c];
 %         else
-%             W(i,j) = W(j,i);
+%             W_perp(i,j) = W_perp(j,i);
 %         end
 %     end
 % end
-W_perp = sdpvar(4);
-for i = 1:4
-    for j = 1:4
-        if (j>=i)
-            [W_perp(i,j),cp_c] = polynomial([p,vy],4);
-            dec_List = [dec_List;cp_c];
-        else
-            W_perp(i,j) = W_perp(j,i);
-        end
-    end
-end
+%
+% W_pc = sdpvar(4,2);
+% for i = 1:4
+%     for j = 1:2
+%         [W_pc(i,j),cp_c] = polynomial([p,vy],w_order);
+%         dec_List = [dec_List;cp_c];
+%     end
+% end
+%
+% W_c = sdpvar(2);
+% for i = 1:2
+%     for j = 1:2
+%         if (j>=i)
+%             [W_c(i,j),cp_c] = polynomial([p,vy],w_order);
+%             dec_List = [dec_List;cp_c];
+%         else
+%             W_c(i,j) = W_c(j,i);
+%         end
+%     end
+% end
+%
+% W = [W_perp, W_pc;
+%      W_pc', W_c];
 
-W_pc = sdpvar(4,2);
-for i = 1:4
-    for j = 1:2
-        [W_pc(i,j),cp_c] = polynomial([p,vy],w_order);
-        dec_List = [dec_List;cp_c];
-    end
-end
-
-W_c = sdpvar(2);
-for i = 1:2
-    for j = 1:2
-        if (j>=i)
-            [W_c(i,j),cp_c] = polynomial([p,vy],w_order);
-            dec_List = [dec_List;cp_c];
-        else
-            W_c(i,j) = W_c(j,i);
-        end
-    end
-end
-
-W = [W_perp, W_pc;
-     W_pc', W_c];
- 
+W_perp = W(1:4,1:4);
 dW_f_perp = jacobian(W_perp(:),[Y,Z,p,vy,vz,pd])*f;
 dW_f_perp = reshape(dW_f_perp,4,4);
 
@@ -118,9 +136,9 @@ dec_List = [dec_List; reshape(W_upper,n*n,1)];
 %            vz+vz_lim; vz_lim-vz;
 %            pd+pd_lim; pd_lim-pd];
 box_lim = [p_lim^2-p^2;
-           vy_lim^2-vy^2;
-           vz_lim^2-vz^2;
-           pd_lim^2-pd^2];
+    vy_lim^2-vy^2;
+    vz_lim^2-vz^2;
+    pd_lim^2-pd^2];
 
 delta_6 = sdpvar(6,1);
 l_order = 4;
@@ -198,82 +216,127 @@ if (return_metric)
     if (solved==0)
         disp('feasible, getting results...');
         dec_sol = clean(double(dec_List),1e-3);
-        W_sol = replace(W,dec_List,dec_sol);
+        %         W_sol = replace(W,dec_List,dec_sol);
         
-        dW_p = jacobian(W(:),p);
-        dW_p_sol = replace(reshape(dW_p,n,n),dec_List,dec_sol);
+        %         dW_p = jacobian(W(:),p);
+        %         dW_p_sol = replace(reshape(dW_p,n,n),dec_List,dec_sol);
+        %
+        %         dW_vy = jacobian(W(:),vy);
+        %         dW_vy_sol = replace(reshape(dW_vy,n,n),dec_List,dec_sol);
         
-        dW_vy = jacobian(W(:),vy);
-        dW_vy_sol = replace(reshape(dW_vy,n,n),dec_List,dec_sol);       
+        %         dW_vz = jacobian(W(:),vz);
+        %         dW_vz_sol = replace(reshape(dW_vz,n,n),dec_List,dec_sol);
+        %
+        %         dW_pd = jacobian(W(:),pd);
+        %         dW_pd_sol = replace(reshape(dW_pd,n,n),dec_List,dec_sol);
         
-%         dW_vz = jacobian(W(:),vz);
-%         dW_vz_sol = replace(reshape(dW_vz,n,n),dec_List,dec_sol);       
-%         
-%         dW_pd = jacobian(W(:),pd);
-%         dW_pd_sol = replace(reshape(dW_pd,n,n),dec_List,dec_sol);       
+        W_sol = zeros(n,n,length(w_mono));
+        for i = 1:length(w_mono)
+            W_sol(:,:,i) = replace(W_list{i},dec_List,dec_sol);
+        end
+        
+        dw_mono_p = jacobian(w_mono,p);
+        dw_mono_vy = jacobian(w_mono,vy);
         
         W_upper_mat = replace(W_upper,dec_List,dec_sol);
         sdisplay(W_sol);
         sdisplay(W_upper_mat);
         pause;
-                
+        
+        %% Create monomial functions
+        for i = 1:length(w_mono)
+            w_mono_i = sdisplay(w_mono(i));
+            dw_mono_p_i = sdisplay(dw_mono_p(i));
+            dw_mono_vy_i = sdisplay(dw_mono_vy(i));
+            
+            w_mono_i = strcat('@(p,vy)',w_mono_i{1});
+            dw_mono_p_i = strcat('@(p,vy)',dw_mono_p_i{1});
+            dw_mono_vy_i = strcat('@(p,vy)',dw_mono_vy_i{1});
+            
+            eval(sprintf('w_mono_%d_fnc = str2func(w_mono_i);',i));
+            eval(sprintf('dw_mono_p_%d_fnc = str2func(dw_mono_p_i);',i));
+            eval(sprintf('dw_mono_vy_%d_fnc = str2func(dw_mono_vy_i);',i));
+        end
+        
         %% Create functions
-      
-        for i = 1:n
-            for j = i:n
-                W_ij = sdisplay(W_sol(i,j));
-                dW_vy_ij = sdisplay(dW_vy_sol(i,j));
-                dW_p_ij = sdisplay(dW_p_sol(i,j));
-%                 dW_vz_ij = sdisplay(dW_vz_sol(i,j));
-%                 dW_pd_ij = sdisplay(dW_pd_sol(i,j));
-                
-                W_ij = strcat('@(p,vy)',W_ij{1});
-                dW_vy_ij = strcat('@(p,vy)',dW_vy_ij{1});
-                dW_p_ij = strcat('@(p,vy)',dW_p_ij{1});
-%                 dW_vz_ij = strcat('@(p,vy,vz,pd)',dW_vz_ij{1});
-%                 dW_pd_ij = strcat('@(p,vy,vz,pd)',dW_pd_ij{1});
-                
-                eval(sprintf('W_%d%d_fnc = str2func(W_ij);',i,j));
-                eval(sprintf('dW_vy_%d%d_fnc = str2func(dW_vy_ij);',i,j));
-                eval(sprintf('dW_p_%d%d_fnc = str2func(dW_p_ij);',i,j));
+        
+        %         for i = 1:n
+        %             for j = i:n
+        %                 W_ij = sdisplay(W_sol(i,j));
+        %                 dW_vy_ij = sdisplay(dW_vy_sol(i,j));
+        %                 dW_p_ij = sdisplay(dW_p_sol(i,j));
+        % %                 dW_vz_ij = sdisplay(dW_vz_sol(i,j));
+        % %                 dW_pd_ij = sdisplay(dW_pd_sol(i,j));
+        %
+        %                 W_ij = strcat('@(p,vy)',W_ij{1});
+        %                 dW_vy_ij = strcat('@(p,vy)',dW_vy_ij{1});
+        %                 dW_p_ij = strcat('@(p,vy)',dW_p_ij{1});
+        % %                 dW_vz_ij = strcat('@(p,vy,vz,pd)',dW_vz_ij{1});
+        % %                 dW_pd_ij = strcat('@(p,vy,vz,pd)',dW_pd_ij{1});
+        %
+        %                 eval(sprintf('W_%d%d_fnc = str2func(W_ij);',i,j));
+        %                 eval(sprintf('dW_vy_%d%d_fnc = str2func(dW_vy_ij);',i,j));
+        %                 eval(sprintf('dW_p_%d%d_fnc = str2func(dW_p_ij);',i,j));
+        %             end
+        %         end
+        
+        %% Put together
+        W_exec = 'W_mat = @(x)';
+        dW_p_exec = 'dW_p_mat = @(x)';
+        dW_vy_exec = 'dW_vy_mat = @(x)';
+        
+        for i = 1:length(w_mono)
+            if i<length(w_mono)
+                W_exec = strcat(W_exec,sprintf('W_sol(:,:,%d)*w_mono_%d_fnc(x(3),x(4)) +',i,i));
+            else
+                W_exec = strcat(W_exec,sprintf('W_sol(:,:,%d)*w_mono_%d_fnc(x(3),x(4));',i,i));
             end
         end
-        
+        for i = 2:length(w_mono)
+            if i<length(w_mono)
+                dW_p_exec = strcat(dW_p_exec,sprintf('W_sol(:,:,%d)*dw_mono_p_%d_fnc(x(3),x(4)) +',i,i));
+                dW_vy_exec = strcat(dW_vy_exec,sprintf('W_sol(:,:,%d)*dw_mono_vy_%d_fnc(x(3),x(4)) +',i,i));
+            else
+                dW_p_exec = strcat(dW_p_exec,sprintf('W_sol(:,:,%d)*dw_mono_p_%d_fnc(x(3),x(4));',i,i));
+                dW_vy_exec = strcat(dW_vy_exec,sprintf('W_sol(:,:,%d)*dw_mono_vy_%d_fnc(x(3),x(4));',i,i));
+            end
+        end
         %% Compile into matrix
+        %
+        %         W_exec = 'W_mat = @(x)[';
+        %         dW_vy_exec = 'dW_vy_mat = @(x)[';
+        %         dW_p_exec = 'dW_p_mat = @(x)[';
+        %
+        %         for i = 1:n
+        %             for j = 1:n
+        %                 if j<n
+        %                     if (j<i)
+        %                         W_exec = strcat(W_exec,'0,');
+        %                         dW_p_exec = strcat(dW_p_exec,'0,');
+        %                         dW_vy_exec = strcat(dW_vy_exec,'0,');
+        %                     else
+        %                         W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4)), ',i,j));
+        %                         dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4)), ',i,j));
+        %                         dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4)), ',i,j));
+        %                     end
+        %                 elseif j == n
+        %                     if i < n
+        %                         W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4)); ',i,j));
+        %                         dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4)); ',i,j));
+        %                         dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4)); ',i,j));
+        %                     else
+        %                         W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4))]; ',i,j));
+        %                         dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4))]; ',i,j));
+        %                         dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4))]; ',i,j));
+        %                     end
+        %                 end
+        %             end
+        %         end
         
-        W_exec = 'W_mat = @(x)[';
-        dW_vy_exec = 'dW_vy_mat = @(x)[';
-        dW_p_exec = 'dW_p_mat = @(x)[';
-        
-        for i = 1:n
-            for j = 1:n
-                if j<n
-                    if (j<i)
-                        W_exec = strcat(W_exec,'0,');
-                        dW_p_exec = strcat(dW_p_exec,'0,');
-                        dW_vy_exec = strcat(dW_vy_exec,'0,');
-                    else
-                        W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4)), ',i,j));
-                        dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4)), ',i,j));
-                        dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4)), ',i,j));
-                    end
-                elseif j == n
-                    if i < n
-                        W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4)); ',i,j));
-                        dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4)); ',i,j));
-                        dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4)); ',i,j));
-                    else
-                        W_exec = strcat(W_exec,sprintf('W_%d%d_fnc(x(3),x(4))]; ',i,j));
-                        dW_p_exec = strcat(dW_p_exec,sprintf('dW_p_%d%d_fnc(x(3),x(4))]; ',i,j));
-                        dW_vy_exec = strcat(dW_vy_exec,sprintf('dW_vy_%d%d_fnc(x(3),x(4))]; ',i,j));
-                    end
-                end
-            end
-        end
-        
+        %% Execute
         eval(W_exec);
         eval(dW_vy_exec);
-        eval(dW_p_exec);       
+        eval(dW_p_exec);
     end
 end
 end
