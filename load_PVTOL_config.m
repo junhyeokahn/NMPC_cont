@@ -29,7 +29,11 @@ obs_mpc = struct('n_obs',length(obs_rad_mpc),'pos',obs_loc_mpc,'r',obs_rad_mpc);
 
 load 'metric_PVTOL.mat';
 
-dW_fnc = @(x) {dW_p_mat(x),dW_vy_mat(x)};
+W_fnc = @(x) symmetric(W_mat(x));
+dW_fnc = @(x) {symmetric(dW_p_mat(x)),symmetric(dW_vy_mat(x))};
+
+% W_fnc = @(x) W_mat(x);
+% dW_fnc = @(x) {dW_p_mat(x),dW_vy_mat(x)};
 
 sigma_ThBw = 0.3296;
 lambda =  0.8283;

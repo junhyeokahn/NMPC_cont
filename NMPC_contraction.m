@@ -13,11 +13,11 @@ geodesic_N = 2;
 %FLR
 % geodesic_N = 3;
 
-setup_geodesic_MPC(n,geodesic_N,W_mat,dW_fnc,n_W); %initializes geodesic_MPC struct
+setup_geodesic_MPC(n,geodesic_N,W_fnc,dW_fnc,n_W); %initializes geodesic_MPC struct
 global geodesic_MPC;
 
 [geo_Prob,geo_Ke,T_e,T_dot_e,geo_Aeq] = ...
-        setup_geodesic_calc(n,geodesic_N,W_mat,dW_fnc,n_W);
+        setup_geodesic_calc(n,geodesic_N,W_fnc,dW_fnc,n_W);
     
 geo_warm = struct('sol',0,'result',[]);    
 
@@ -129,7 +129,7 @@ aux_Prob = setup_opt_aux(m);
 
 tic
 [ctrl_opt,converged_aux] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
-                            W_mat,f,B,MP_ctrl(1,:)',lambda);
+                            W_fnc,f,B,MP_ctrl(1,:)',lambda);
 toc;
 disp('opt_control:');disp(converged_aux);
 disp(ctrl_opt);
@@ -240,7 +240,7 @@ if (~track_traj)
         
         tic
         [Aux_ctrl(i,:),opt_solved(i,3)] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
-            W_mat,f,B,u_nom(1,:)',lambda);
+            W_fnc,f,B,u_nom(1,:)',lambda);
         ctrl_solve_time(i,3) = toc;
         
         True_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = u_nom+kron(ones((dt_sim/dt)+1,1),Aux_ctrl(i,:));
@@ -280,7 +280,7 @@ else
         if (~FL_ctrl)
             tic
             [Aux_ctrl(i,:),opt_solved(i,3)] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
-                W_mat,f,B,u_nom(1,:)',lambda);
+                W_fnc,f,B,u_nom(1,:)',lambda);
             ctrl_solve_time(i,3) = toc;
         else
             xi_nom = phi(x_nom');

@@ -12,7 +12,7 @@ obs_mpc = struct('n_obs',0);
 
 load 'metric_FLR.mat';
 
-W_mat = @(x) W_mat(wrapToPi(x(1)));
+W_fnc = @(x) W_mat(wrapToPi(x(1)));
 dW_fnc = @(x) {dW_x1_mat(wrapToPi(x(1)))};
 
 sigma_ThBw = 0.0475;
