@@ -99,25 +99,21 @@ condn = 132.8;
 % condn = 128.55;
 return_metric = 1;
 
-[sos_prob, w_lower, w_upper,W_mat, dW_p_mat, dW_vy_mat,~, ~, W_upper] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+[sos_prob, w_lower, w_upper,w_poly_fnc, dw_poly_p_fnc, dw_poly_vy_fnc,~, ~,W_eval, W_upper] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
                                 condn,lambda,ccm_eps,return_metric);
 
-save('metric_PVTOL.mat','W_mat','dW_p_mat','dW_vy_mat','W_upper');
+save('metric_PVTOL_vectorized.mat','W_eval','w_poly_fnc','dw_poly_p_fnc','dw_poly_vy_fnc','W_upper');
 % load('metric_PVTOL.mat');
 
 %% Compute aux control bound
 
 disp('Checking CCM conditions and Computing control bound...');
 lambda = 0.998*lambda;
-% W_fnc = @(x) symmetric(W_mat(x));
-% dW_p_fnc = @(x) symmetric(dW_p_mat(x));
-% dW_vy_fnc = @(x) symmetric(dW_vy_mat(x));
-W_fnc = W_mat;
-dW_p_fnc = dW_p_mat;
-dW_vy_fnc = dW_vy_mat;
+% dw_poly_p_fnc = dW_p_mat;
+% dw_poly_vy_fnc = dW_vy_mat;
 
-dW_vz_mat = @(x) zeros(n);
-dW_pd_mat = @(x) zeros(n);
+dW_vz_fnc = @(x) zeros(n);
+dW_pd_fnc = @(x) zeros(n);
 
 m = 0.486;
 J = 0.00383;
@@ -174,7 +170,7 @@ for i = 1:length(p_range)
             for l = 1:length(pd_range)
                 x = [0;0;p_range(i);vy_range(j);vz_range(k);pd_range(l)];
                 
-                W = W_fnc(x);
+                W = W_eval(w_poly_fnc(x));
                 M = W\eye(n);
                 Theta = chol(M);
                 Theta_Bw = Theta*Bw(x);
@@ -184,8 +180,8 @@ for i = 1:length(p_range)
                 
                 f = f_mat(x);
                 df = df_mat(x);
-                F = -dW_p_fnc(x)*f(1) - dW_vy_fnc(x)*f(2)-...
-                     dW_vz_mat(x)*f(3) - dW_pd_mat(x)*f(4) + ...
+                F = -W_eval(dw_poly_p_fnc(x))*f(1) - W_eval(dw_poly_vy_fnc(x))*f(2)-...
+                     dW_vz_fnc(x)*f(3) - dW_pd_fnc(x)*f(4) + ...
                      df*W + W*df' + 2*lambda*W;
                 
                 delta_u_den = eig((inv(L))'*(B*B')*inv(L));
