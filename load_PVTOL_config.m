@@ -27,13 +27,13 @@ obs_mpc = struct('n_obs',length(obs_rad_mpc),'pos',obs_loc_mpc,'r',obs_rad_mpc);
 
 %% Setup Metric
 
-load 'metric_PVTOL.mat';
+load 'metric_PVTOL_vectorized.mat';
 
-% W_fnc = @(x) symmetric(W_mat(x));
-% dW_fnc = @(x) {symmetric(dW_p_mat(x)),symmetric(dW_vy_mat(x))};
+% W_fnc = @(x) W_mat(x);
+% dW_fnc = @(x) {dW_p_mat(x),dW_vy_mat(x)};
 
-W_fnc = @(x) W_mat(x);
-dW_fnc = @(x) {dW_p_mat(x),dW_vy_mat(x)};
+W_fnc = struct('W_eval',W_eval,'w_poly_fnc',w_poly_fnc);
+dW_fnc = @(x) {dw_poly_p_fnc(x), dw_poly_vy_fnc(x)};
 
 % sigma_ThBw = 0.3296;
 sigma_ThBw = 0.3185;

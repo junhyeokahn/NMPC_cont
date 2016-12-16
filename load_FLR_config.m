@@ -10,10 +10,14 @@ obs_mpc = struct('n_obs',0);
 
 %% Setup Metric
 
-load 'metric_FLR.mat';
+load 'metric_FLR_vectorized.mat';
 
-W_fnc = @(x) W_mat(wrapToPi(x(1)));
-dW_fnc = @(x) {dW_x1_mat(wrapToPi(x(1)))};
+% W_fnc = @(x) W_mat(wrapToPi(x(1)));
+% dW_fnc = @(x) {dW_x1_mat(wrapToPi(x(1)))};
+
+w_poly = w_poly_fnc(wrapToPi(x(1,:)));
+W_fnc = struct('W_eval',W_eval,'w_poly_fnc',w_poly);
+dW_fnc = @(x) {dw_poly_x1_fnc(wrapToPi(x(1,:)))};
 
 sigma_ThBw = 0.0475;
 lambda =  2.5;

@@ -22,7 +22,8 @@ conJ(1:n*(N+1),n*(N+1)+1:end) = -Prob.user.B_full;
 
 % conJ(end-1,1:n) = NaN;
 
-M = (geodesic_MPC.W(xu(1:n)))\eye(n);
+w_poly = geodesic_MPC.W.w_poly_fnc(xu(1:n));
+M = (geodesic_MPC.W.W_eval(w_poly))\eye(n);
 conJ(n*(N+1)+1,1:n) = -2*US_A'*M;
 
 
