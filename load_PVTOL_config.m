@@ -29,15 +29,16 @@ obs_mpc = struct('n_obs',length(obs_rad_mpc),'pos',obs_loc_mpc,'r',obs_rad_mpc);
 
 load 'metric_PVTOL.mat';
 
-W_fnc = @(x) symmetric(W_mat(x));
-dW_fnc = @(x) {symmetric(dW_p_mat(x)),symmetric(dW_vy_mat(x))};
+% W_fnc = @(x) symmetric(W_mat(x));
+% dW_fnc = @(x) {symmetric(dW_p_mat(x)),symmetric(dW_vy_mat(x))};
 
-% W_fnc = @(x) W_mat(x);
-% dW_fnc = @(x) {dW_p_mat(x),dW_vy_mat(x)};
+W_fnc = @(x) W_mat(x);
+dW_fnc = @(x) {dW_p_mat(x),dW_vy_mat(x)};
 
-sigma_ThBw = 0.3296;
+% sigma_ThBw = 0.3296;
+sigma_ThBw = 0.3185;
 lambda =  0.8283;
-ctrl_bound = 5.95;
+ctrl_bound = 6.00;
 n_W = [3,4];
 
 %% Dynamics
