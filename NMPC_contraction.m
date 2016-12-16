@@ -113,7 +113,7 @@ load MPC_WARM_PVTOL.mat;
 tic
 [MPC_state,~,converged_MPC,mpc_warm,MPC_Prob] = compute_NMPC(MPC_Prob,...
     test_state,MP_state(1,:)',state_constr_low,ctrl_constr,MP_state,MP_ctrl,...
-    n,m,N_mpc,L_e_mpc,mpc_warm,dt);
+    n,m,N_mpc,L_e_mpc,mpc_warm,dt,(d_bar)^2);
 toc
 disp('MPC:');disp(converged_MPC);
 
@@ -155,7 +155,6 @@ accel_nom = zeros(T_steps,2);
 w_dist = zeros(T_steps,2);
 
 x_act = zeros(T_steps+1,n);
-x_act(1,:) = test_state';
 
 Geod = cell(T_steps,1);
 
@@ -171,6 +170,7 @@ opt_solved = NaN(T_steps,3);
 geo_energy = zeros(T_steps,2);
 geo_energy(:,2) = NaN;
 
+x_act(1,:) = test_state';
 state_0 = test_state;
 state_0_MPC = MP_state(1,:)';
 
@@ -179,7 +179,7 @@ i_mpc = 0;
       
 %% Simulate
 
-track_traj = 1;
+track_traj = 0;
 FL_ctrl = 0;
 
 if (~track_traj)
@@ -194,10 +194,17 @@ if (~track_traj)
                 n,geodesic_N,state_0_MPC,state_0,T_e,T_dot_e,geo_Aeq,geo_warm);
             geo_energy(i,1) = J_opt;
             
+            if (i>1)
+%                 E_prev = geo_energy(1+(i_mpc-1)*(delta/dt_sim),2);
+%                 E_bnd = (sqrt(E_prev)*exp(-lambda*delta) + d_bar*(1-exp(-lambda*delta)))^2;
+                E_bnd = J_opt;
+            else
+                E_bnd = (d_bar)^2;
+            end
             tic
             [MPC_x,MPC_u,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
                 compute_NMPC(MPC_Prob,state_0,state_0_MPC,state_constr_low,ctrl_constr,MP_state,MP_ctrl,...
-                n,m,N_mpc,L_e_mpc,mpc_warm,dt);
+                n,m,N_mpc,L_e_mpc,mpc_warm,dt,E_bnd);
             ctrl_solve_time(i,1) = toc;
             
             fprintf('%d, %.2f \n', opt_solved(i,1),ctrl_solve_time(i,1));
@@ -311,6 +318,7 @@ end
 
 %% Plots
 
+% close all;
 % plot_FLR;
 plot_PVTOL;
 

@@ -82,6 +82,7 @@ ctrl_bound = ctrl_bound*w_max;
 euc_bound = d_bar*sqrt(diag(W_upper));
 
 In = eye(n);
+M_ccm_pos_unscaled = ((In(1:2,:)*W_upper*In(1:2,:)')\eye(2));
 M_ccm_pos = (1/d_bar^2)*((In(1:2,:)*W_upper*In(1:2,:)')\eye(2));
 [U_pos,S_pos,V_pos] = svd(M_ccm_pos);
     

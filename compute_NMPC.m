@@ -1,6 +1,6 @@
 function [NMPC_state,NMPC_ctrl,converged,warm,Prob] = ...
     compute_NMPC(Prob,act_p,~,state_constr,ctrl_constr,MP_state,MP_ctrl,...
-    n,m,N,L_e,warm,dt)
+    n,m,N,L_e,warm,dt,E_s)
 
 %Solution guess
 if (~warm.sol)
@@ -114,6 +114,8 @@ end
 %Update constraint information
 Prob.user.x_act = act_p;
 Prob.user.x_eq = x_term;
+
+Prob = modify_c_U(Prob,E_s,n*(N+1)+1);
 
 %Recall warm solution
 if (warm.sol)

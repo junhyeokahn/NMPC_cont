@@ -1,5 +1,47 @@
 %% Plot
-close all
+
+%2D State Plot
+figure(1)
+hold on
+plot(MP_state(:,1),MP_state(:,2),'g--','linewidth',1);
+if (~track_traj)
+    for i_mpc = 1:T_steps_MPC
+        plot(MPC_state{i_mpc}(1:round(delta/dt)+1,1),MPC_state{i_mpc}(1:round(delta/dt)+1,2),'r--','linewidth',1.5);
+        
+        if i_mpc<T_steps_MPC
+            num_pnts = 3;
+        else
+            num_pnts = 5;
+        end
+        
+        E_start = geo_energy(1+(i_mpc-1)*(delta/dt_sim),2);
+        Ellipse_plot(M_ccm_pos_unscaled*(1/E_start),MPC_state{i_mpc}(1,1:2)',30,'g');
+        
+        t_mpc_span = linspace(0,delta,num_pnts);
+        for j = 2:length(t_mpc_span)-1
+            E_j = (sqrt(E_start)*exp(-lambda*t_mpc_span(j)) + d_bar*(1-exp(-lambda*t_mpc_span(j))))^2;
+            Ellipse_plot(M_ccm_pos_unscaled*(1/E_j),MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,'y');
+        end
+        E_end = (sqrt(E_start)*exp(-lambda*delta) + d_bar*(1-exp(-lambda*delta)))^2;
+        Ellipse_plot(M_ccm_pos_unscaled*(1/E_end),MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'r');
+    end
+else
+    d0 = sqrt(geo_energy(1,1));
+    for i = 1:round(delta/dt_sim):length(solve_t)
+        time = solve_t(i);
+        d_i = d0*exp(-lambda*time) + d_bar*(1-exp(-lambda*time));
+        Ellipse_plot(M_ccm_pos_unscaled*(1/d_i^2),MP_state(1+(i-1)*(dt_sim/dt),1:2),30,'k');
+    end
+end
+plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
+plot(x_act(1:round(delta/dt_sim):end,1),x_act(1:round(delta/dt_sim):end,2),'ko','markersize',7,'markerfacecolor','k');
+
+Ellipse_plot(P(1:2,1:2)*(1/(alpha)), x_eq(1:2),30,'k');
+xlabel('$X$','interpreter','latex'); 
+ylabel('$Z$','interpreter','latex');
+set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+grid on; 
+% axis equal
 
 % State Trajectory
 figure()
@@ -38,31 +80,6 @@ ylabel('k(x^{*},x)');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 grid on
 
-%2D State Plot
-figure()
-hold on
-plot(MP_state(:,1),MP_state(:,2),'g--','linewidth',1);
-if (~track_traj)
-    for i_mpc = 1:T_steps_MPC
-        plot(MPC_state{i_mpc}(1:round(delta/dt)+1,1),MPC_state{i_mpc}(1:round(delta/dt)+1,2),'r--','linewidth',1.5);
-        Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1,1:2)',30,'k');
-        Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'k');
-    end
-else
-    for i = 1:round(delta/dt_sim):length(solve_t)
-        Ellipse_plot(M_ccm_pos,MP_state(1+(i-1)*(dt_sim/dt),1:2),30,'k');
-    end
-end
-plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
-plot(x_act(1:round(delta/dt_sim):end,1),x_act(1:round(delta/dt_sim):end,2),'ko','markersize',7,'markerfacecolor','k');
-
-Ellipse_plot(P(1:2,1:2)*(1/(alpha)), x_eq(1:2),30,'k');
-xlabel('$X$','interpreter','latex'); 
-ylabel('$Z$','interpreter','latex');
-set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
-grid on; 
-% axis equal
-
 %Solve Time
 figure()
 hold on
@@ -90,8 +107,19 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 figure()
 plot(solve_t(1:end-1),sqrt(geo_energy(:,1)),'b-','linewidth',2);
 hold on
-plot(solve_t(1:end-1),d_bar*ones(T_steps,1),'r-','linewidth',2);
-plot(solve_t(1:end-1),sqrt(geo_energy(:,2)),'bo','markersize',10,'markerfacecolor','b','linewidth',2);
+if (~track_traj)
+%     plot(solve_t(1:end-1),d_bar*ones(T_steps,1),'r-','linewidth',2);
+    for i_mpc = 1:T_steps_MPC
+        E_start = geo_energy(1+(i_mpc-1)*(delta/dt_sim),2);
+        t_start = solve_t(1+(i_mpc-1)*(delta/dt_sim));
+        t_mpc_span = 0:dt_sim:delta;
+        d_mpc = sqrt(E_start)*exp(-lambda*t_mpc_span) + d_bar*(1-exp(-lambda*t_mpc_span));
+        plot(t_mpc_span+t_start,d_mpc,'r-','linewidth',2);
+    end
+    plot(solve_t(1:end-1),sqrt(geo_energy(:,2)),'bo','markersize',10,'markerfacecolor','b','linewidth',2);
+else
+    plot(solve_t(1:end-1),d0*exp(-lambda*solve_t(1:end-1)) + d_bar*(1-exp(-lambda*solve_t(1:end-1))),'r-','linewidth',2);
+end
 grid on
 legend('d(x^{*},x)','RCI bound');
 xlabel('Time [s]');
