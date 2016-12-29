@@ -8,7 +8,7 @@ function [solved,w_lower,w_upper,W_mat,dW_p_mat,dW_vy_mat,dW_vz_mat,dW_pd_mat,W_
 W_scale = diag([0.001;0.02;0.0367;0.005;0.001;0.002]);
 % W_scale = zeros(n);
 
-% sin_x = @(x) 0.05059*(x/(pi/6));
+% sin_x = @(x) 0.5059*(x/(pi/6));
 % cos_x = @(x) 0.9326 - 0.06699*(2*(x/(pi/6))^2 -1);
 
 sin_x = @(x)  0.7264*(x/(pi/4)) - 0.01942*(4*(x/(pi/4))^3 - 3*(x/(pi/4)));

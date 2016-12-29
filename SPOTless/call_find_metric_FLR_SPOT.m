@@ -54,7 +54,7 @@ x3_lim = pi; %rotor angle
 %     cond_u = 1.2*condn_prev;
 %     while (~solved) 
 %         fprintf(' cond_u: %.2f: ', cond_u);
-%         [sos_prob,~,~,~,~] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
+%         [sos_prob,~,~] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
 %                                 cond_u,lambda,ccm_eps,return_metric);
 %         if (sos_prob == 0)
 %             solved = 1;
@@ -78,7 +78,7 @@ x3_lim = pi; %rotor angle
 %         condn = (cond_l+cond_u)/2;
 %         fprintf(' cond: %.2f', condn);
 %         
-%         [sos_prob, w_lower, w_upper,~,~] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
+%         [sos_prob, w_lower, w_upper] = find_metric_FLR(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
 %                                 condn,lambda,ccm_eps,return_metric);
 %         
 %         if (sos_prob == 0)
@@ -105,28 +105,22 @@ x3_lim = pi; %rotor angle
 
 %% Pick a solution
 
-% load metric_FLR_comp_final.mat;
-% lambda = lambda_range(11); 
-% condn = cond_bound(11);
 lambda = 2.5; 
 condn = 379;
 return_metric = 1;
 
-[sos_prob, w_lower, w_upper,w_poly_fnc, dw_poly_x1_fnc, dw_poly_x2_fnc, W_eval, W_upper] = find_metric_FLR_SPOT(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
+[sos_prob, w_lower, w_upper] = find_metric_FLR_SPOT(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
                                 condn,lambda,ccm_eps,return_metric);
 
-save('metric_FLR_vectorized.mat','W_eval','w_poly_fnc','dw_poly_x1_fnc','W_upper');
 
 %% Compute aux control bound
-
+load('metric_FLR_vectorized.mat');
 disp('Checking CCM conditions and Computing control bound...');
 
 B = [zeros(3,1);1/J];
 Bw = [0,(1/I),0,0;
       0,0,0,(1/J)]';
 B_perp = [eye(3); zeros(1,3)];
-
-% d_bar = sqrt(double(1/w_lower))/lambda; %normalized
 
 ctrl_N = 15;
 x1_range = linspace(-x1_lim, x1_lim, ctrl_N);
@@ -186,7 +180,7 @@ disp(max(max(eig_W(:,:,2))));
 disp('CCM:'); disp(min(eig_CCM(:)));
 
 
-%% CVX approx method
+%% Pullback method
 
 % f = [x2;
 %         (m*g*l/I)*sin_x1 - (sigma/I)*(x1-x3);

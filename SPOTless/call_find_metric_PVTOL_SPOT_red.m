@@ -5,7 +5,7 @@ warning('off','MATLAB:lang:badlyScopedReturnValue');
 
 %% Constants
 
-n = 6;
+n = 5;
 g = 9.81;
 ccm_eps = 0.01;
 
@@ -42,7 +42,7 @@ vz_lim = 1.0;
 %     cond_u = 1.2*condn_prev;
 %     while (~solved) 
 %         fprintf(' cond_u: %.2f: ', cond_u);
-%         [sos_prob,~,~] = find_metric_PVTOL_SPO(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+%         [sos_prob,~,~,~,~,~,~,~] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
 %                                 cond_u,lambda,ccm_eps,return_metric);
 %         if (sos_prob == 0)
 %             solved = 1;
@@ -66,7 +66,7 @@ vz_lim = 1.0;
 %         condn = (cond_l+cond_u)/2;
 %         fprintf(' cond: %.2f', condn);
 %         
-%         [sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+%         [sos_prob, w_lower, w_upper,~,~,~,~,~] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
 %                                 condn,lambda,ccm_eps,return_metric);
 %         
 %         if (sos_prob == 0)
@@ -93,20 +93,21 @@ vz_lim = 1.0;
 
 %% Pick a solution
 
-lambda = 0.83; 
+lambda = 1; 
 condn = 132.8;
 % lambda = 0.81;
 % condn = 128.55;
 return_metric = 1;
 
-[sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+[sos_prob, w_lower, w_upper,w_poly_fnc, dw_poly_p_fnc, dw_poly_vy_fnc,~, ~,W_eval, W_upper] = find_metric_PVTOL_SPOT_red(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
                                 condn,lambda,ccm_eps,return_metric);
 
-%% Compute aux control bound
-load('metric_PVTOL_vectorized.mat');
+% save('metric_PVTOL_red_vectorized.mat','W_eval','w_poly_fnc','dw_poly_p_fnc','dw_poly_vy_fnc','W_upper');
+% load('metric_PVTOL.mat');
 
+%% Check CCM conditions red
 disp('Checking CCM conditions and Computing control bound...');
-lambda = 0.998*lambda;
+lambda = 0.99*lambda;
 
 dW_vz_fnc = @(x) zeros(n);
 dW_pd_fnc = @(x) zeros(n);
@@ -115,84 +116,60 @@ m = 0.486;
 J = 0.00383;
 len = 0.25;
 
-B = [zeros(1,4),1/m,len/J;
-     zeros(1,4),1/m,-len/J]';
- 
-Bw = @(x)[zeros(1,3),cos(x(3)),-sin(x(3)),0]';
+Bw = @(x)[zeros(1,2),cos(x(5)),-sin(x(5)),0]';
   
-B_perp = [eye(4);
-        zeros(2,4)];
+B_perp = @(x)[eye(2), zeros(2,1);
+              zeros(3,2), [1;0;-x(4)]];
 
 ctrl_N = 12;
 p_range = linspace(-p_lim, p_lim, ctrl_N);
 vy_range = linspace(-vy_lim, vy_lim, ctrl_N);
 vz_range = linspace(-vz_lim, vz_lim, ctrl_N);
-pd_range = linspace(-pd_lim, pd_lim, ctrl_N);
 
-sin_x = @(x) 0.7264*(x/(pi/4));
-cos_x = @(x) 0.8516 - 0.1464*(2*(x/(pi/4))^2 -1);
+% sin_x = @(x) 0.7264*(x/(pi/4));
+% cos_x = @(x) 0.8516 - 0.1464*(2*(x/(pi/4))^2 -1);
 
-df_mat = @(x) [0,0,-x(4)*sin(x(3))-x(5)*cos(x(3)),cos(x(3)),-sin(x(3)),0; 
-               0,0, x(4)*cos(x(3))-x(5)*sin(x(3)),sin(x(3)), cos(x(3)),0;
-               zeros(1,5),1;
-               0,0,-g*cos(x(3)),0,x(6),x(5);
-               0,0, g*sin(x(3)),-x(6),0,-x(4);
-               zeros(1,6)];
-
-f_mat = @(x) [x(6); %p_dot
-              x(6)*x(5) - g*sin(x(3)); %vy_dot
-              -x(6)*x(4) - g*cos(x(3)); %vz_dot
-              0]; %pd_dot
-          
-
-delta_u = zeros(ctrl_N,ctrl_N,ctrl_N,ctrl_N);
-eig_CCM = zeros(ctrl_N, ctrl_N, ctrl_N, ctrl_N);
+df_mat = @(x) [0,0,cos(x(5)),-sin(x(5)),-x(3)*sin(x(5))-x(4)*cos(x(5));
+               0,0,sin(x(5)),cos(x(5)),x(3)*cos(x(5))-x(4)*sin(x(5));
+               0,0,0,0,-g*cos(x(5));
+               0,0,0,0, g*sin(x(5));
+               zeros(1,5)];
+f_mat = @(x) -g*sin(x(5)); %vy_dot
+              
+eig_CCM = zeros(ctrl_N, ctrl_N, ctrl_N);
 eig_W = zeros(ctrl_N,ctrl_N,2);
-sigma_ThBw = zeros(ctrl_N,ctrl_N,ctrl_N,ctrl_N);
+sigma_ThBw = zeros(ctrl_N,ctrl_N,ctrl_N);
 
 for i = 1:length(p_range)
     for j = 1:length(vy_range)
         for k = 1:length(vz_range)
-            for l = 1:length(pd_range)
-                x = [0;0;p_range(i);vy_range(j);vz_range(k);pd_range(l)];
-                
-                W = W_eval(w_poly_fnc(x));
-                M = W\eye(n);
-                Theta = chol(M);
-                Theta_Bw = Theta*Bw(x);
-                sigma_ThBw(i,j,k,l) = max(sqrt(eig(Theta_Bw'*Theta_Bw)));
-                
-                L = chol(W);
-                
-                f = f_mat(x);
-                df = df_mat(x);
-                F = -W_eval(dw_poly_p_fnc(x))*f(1) - W_eval(dw_poly_vy_fnc(x))*f(2)-...
-                     dW_vz_fnc(x)*f(3) - dW_pd_fnc(x)*f(4) + ...
-                     df*W + W*df' + 2*lambda*W;
-                
-                delta_u_den = eig((inv(L))'*(B*B')*inv(L));
-                delta_u(i,j,k,l) = 0.5*max(eig((inv(L))'*F*inv(L)))/...
-                    sqrt(min(delta_u_den(delta_u_den>0)));
-                
-                R_CCM = -B_perp'*F*B_perp;
-                
-                eig_CCM(i,j,k,l) = min(eig(R_CCM));
-                eig_W(i,j,1) = min(eig(W));
-                eig_W(i,j,2) = max(eig(W));
-            end
+            x = [0;0;vy_range(j);vz_range(k);p_range(i)];
+            
+            W = W_eval(w_poly_fnc(x));
+            M = W\eye(n);
+            Theta = chol(M);
+            Theta_Bw = Theta*Bw(x);
+            sigma_ThBw(i,j,k) = max(sqrt(eig(Theta_Bw'*Theta_Bw)));
+            
+            f = f_mat(x);
+            df = df_mat(x);
+            F = -W_eval(dw_poly_vy_fnc(x))*f + ...
+                df*W + W*df' + 2*lambda*W;
+            
+            R_CCM = -B_perp(x)'*F*B_perp(x);
+            
+            eig_CCM(i,j,k) = min(eig(R_CCM));
+            eig_W(i,j,1) = min(eig(W));
+            eig_W(i,j,2) = max(eig(W));
         end
     end
 end
 d_bar = max(sigma_ThBw(:))/lambda;
 disp('d_bar'); disp(d_bar);
 disp('euc_bound'); disp(d_bar*sqrt(w_upper));
-disp('Control:'); disp(max(d_bar*delta_u(:)));
 disp('W:'); disp(min(min(eig_W(:,:,1))));
 disp(max(max(eig_W(:,:,2))));
 disp('CCM:'); disp(min(eig_CCM(:)));
-% disp('Th_Bw:'); disp(max(max(sigma_ThBw)));
-
-
 
 
 
