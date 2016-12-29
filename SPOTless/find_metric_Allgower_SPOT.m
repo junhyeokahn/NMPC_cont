@@ -122,34 +122,32 @@ if (return_metric)
         w_poly = w_poly(find(NNZ_list));
         W_sol = W_sol(:,:,find(NNZ_list));
         
-        %anticipating constant metric solution
-%         dw_poly_x1 = diff(w_poly,x(1));
-%         dw_poly_x2 = diff(w_poly,x(2));
+        dw_poly_x1 = diff(w_poly,x(1));
+        dw_poly_x2 = diff(w_poly,x(2));
         
-%         W_upper = clean(double(SOS_soln.eval(W_upper)),1e-3);
+        W_upper = clean(double(SOS_soln.eval(W_upper)),1e-3);
         
 %         pause;
         
         %% Create monomial functions
-%         w_poly_fnc = mss2fnc(w_poly,x,randn(length(x),2));
-%         dw_poly_x1_fnc = mss2fnc(dw_poly_x1,x,randn(length(x),2));
-%         dw_poly_x2_fnc = mss2fnc(dw_poly_x2,x,randn(length(x),2));
-%         
-%         %% Put together
-%         W_exec = 'W_eval = @(ml)';
-%         
-%         for i = 1:length(w_poly)
-%             if i<length(w_poly)
-%                 W_exec = strcat(W_exec,sprintf('W_sol(:,:,%d)*ml(%d) +',i,i));
-%             else
-%                 W_exec = strcat(W_exec,sprintf('W_sol(:,:,%d)*ml(%d);',i,i));
-%             end
-%         end
+        w_poly_fnc = mss2fnc(w_poly,x,randn(length(x),2));
+        dw_poly_x1_fnc = mss2fnc(dw_poly_x1,x,randn(length(x),2));
+        dw_poly_x2_fnc = mss2fnc(dw_poly_x2,x,randn(length(x),2));
+        
+        %% Put together
+        W_exec = 'W_eval = @(ml)';
+        
+        for i = 1:length(w_poly)
+            if i<length(w_poly)
+                W_exec = strcat(W_exec,sprintf('W_sol(:,:,%d)*ml(%d) +',i,i));
+            else
+                W_exec = strcat(W_exec,sprintf('W_sol(:,:,%d)*ml(%d);',i,i));
+            end
+        end
         
         %% Execute
-%         eval(W_exec);
-        W_sol = W_sol(:,:,1);
-        save('metric_Allgower.mat','W_sol');
+        eval(W_exec);
+        save('metric_Allgower.mat','W_eval','w_poly_fnc','dw_poly_x1_fnc','dw_poly_x2_fnc','W_upper');
         
     end
 end

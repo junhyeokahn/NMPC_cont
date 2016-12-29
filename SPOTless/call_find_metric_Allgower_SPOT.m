@@ -89,7 +89,7 @@ ccm_eps = 0;
 %% Pick a solution
 
 lambda = 1.742857142857143; 
-condn = 1.6325;
+condn = 1.6344;
 return_metric = 1;
 
 [sos_prob, w_lower, w_upper] = find_metric_Allgower_SPOT(x1_lim, x2_lim,condn, lambda, ccm_eps,return_metric);
@@ -97,7 +97,7 @@ return_metric = 1;
 %% Compute control bounds using optimal metric (W = const matrix)
 load('metric_Allgower.mat');
 
-M = W_sol\eye(2);
+M = W_upper\eye(2);
 alpha = max(eig(M));
 w = 0.1;
 d_bar = sqrt(alpha)*w/lambda;
@@ -109,26 +109,43 @@ figure()
 Ellipse_plot(M*(1/d_bar^2),[0;0],20,'k');
 Ellipse_plot(P_rci,[0;0],20,'r');
 
-L = chol(W_sol);
+f_mat = @(x) [-1*x(1) + 2*x(2);
+    -3*x(1) + 4*x(2) - 0.25*(x(2)^3)];
+
 df_mat = @(x) [-1, 2;
      -3, 4-0.75*x(2)^2];
 B = [0.5;-2];
-F = @(x) df_mat(x)*W_sol + W_sol*df_mat(x)' + 2*lambda*W_sol;
+B_perp = [2;0.5];
 
+x1_range = linspace(-x1_lim,x1_lim,30);
 x2_range = linspace(-x2_lim,x2_lim,30);
-delta_u = zeros(length(x2_range),1);
+delta_u = zeros(length(x2_range),length(x1_range),1);
+eig_CCM = delta_u;
 
 for i = 1:length(x2_range)
-    F_sol = F([0;x2_range(i)]);
+    for j = 1:length(x1_range)
+        x = [x1_range(j); x2_range(i)];
+        f = f_mat(x);
+        df = df_mat(x);
+        W = W_eval(w_poly_fnc(x));
+        L = chol(W);
+        
+        F_sol = -W_eval(dw_poly_x1_fnc(x))*f(1) - W_eval(dw_poly_x2_fnc(x))*f(2) + ...
+            df_mat(x)*W + W*df_mat(x)' + 2*lambda*W;
     
-    delta_u(i) = 0.5*d_bar*max(eig((inv(L))'*F_sol*inv(L)))/...
+        delta_u(i,j) = 0.5*d_bar*max(eig((inv(L))'*F_sol*inv(L)))/...
                           sqrt(max(eig((inv(L))'*(B*B')*inv(L))));
+                      
+        eig_CCM(i,j) = min(eig(B_perp'*(-F_sol)*B_perp));
+    end
 end
 
 figure()
-plot(x2_range,delta_u,'b-','linewidth',2);
+surf(x1_range,x2_range,delta_u);
 grid on
-xlabel('x2'); ylabel('$\bar{\delta}_u$','interpreter','latex');
+xlabel('x1'); ylabel('x2'); zlabel('$\bar{\delta}_u$','interpreter','latex');
 set(findall(gcf,'type','text'),'FontSize',28);set(gca,'FontSize',28)
 
+disp('control:'); disp(max(delta_u(:)));
+disp('CCM:'); disp(min(eig_CCM(:)));
 
