@@ -113,8 +113,16 @@ prog = prog.withPos(-free_vars + a);
 prog = prog.withPos(free_vars + a);
 
 SOS_soln = prog.minimize(trace(W_scale*W_upper) + (1e-3)*sum(a), @spot_mosek, options);
+try
+    solved = ~SOS_soln.status.strcmp('STATUS_PRIMAL_AND_DUAL_FEASIBLE');
+catch
+    %failed
+    solved = 1;
+    w_lower = 0;
+    w_upper = 0;
+    return;
+end
 
-solved = ~SOS_soln.status.strcmp('STATUS_PRIMAL_AND_DUAL_FEASIBLE');
 w_lower = double(SOS_soln.eval(w_lower));
 w_upper = double(SOS_soln.eval(w_upper));
 

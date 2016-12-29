@@ -143,7 +143,15 @@ len = length(free_vars);
 prog = prog.withPos(-free_vars + a);
 prog = prog.withPos(free_vars + a);
 
-SOS_soln = prog.minimize(trace(W_scale*W_upper) + (1e-3)*sum(a), @spot_mosek, options);
+try
+    SOS_soln = prog.minimize(trace(W_scale*W_upper) + (1e-3)*sum(a), @spot_mosek, options);
+catch
+    %failed
+    solved = 1;
+    w_lower = 0;
+    w_upper = 0;
+    return;
+end
 
 solved = ~SOS_soln.status.strcmp('STATUS_PRIMAL_AND_DUAL_FEASIBLE');
 
