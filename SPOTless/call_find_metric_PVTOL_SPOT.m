@@ -42,7 +42,7 @@ vz_lim = 1.0;
 %     cond_u = 1.2*condn_prev;
 %     while (~solved) 
 %         fprintf(' cond_u: %.2f: ', cond_u);
-%         [sos_prob,~,~] = find_metric_PVTOL_SPO(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+%         [sos_prob,~,~] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
 %                                 cond_u,lambda,ccm_eps,return_metric);
 %         if (sos_prob == 0)
 %             solved = 1;

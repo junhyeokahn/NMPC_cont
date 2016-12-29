@@ -1,4 +1,4 @@
-function [solved,w_lower,w_upper,w_poly_fnc,dw_poly_p_fnc,dw_poly_vy_fnc,dW_vz_mat,dW_pd_mat,W_eval,W_upper_mat] = ...
+function [solved,w_lower,w_upper] = ...
     find_metric_PVTOL_SPOT_red(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
     condn,lambda,ccm_eps,return_metric)
 %%
@@ -130,8 +130,6 @@ R_CCM = -B_perp'*(-dW_f + df*W + W*df' + 2*lambda*W)*B_perp;
 prog = prog.withSOS((dtre'*R_CCM*dtre - ccm_eps*(dtre'*dtre)) - Lc'*box_lim);
 
 options = spot_sdp_default_options();
-% options.solveroptions.MSK_IPAR_BI_CLEAN_OPTIMIZER = 'MSK_OPTIMIZER_INTPNT';
-% options.solveroptions.MSK_IPAR_INTPNT_BASIS = 'MSK_BI_NEVER';
 options.verbose = return_metric;
 
 %Norm constraint
@@ -150,14 +148,6 @@ solved = ~SOS_soln.status.strcmp('STATUS_PRIMAL_AND_DUAL_FEASIBLE');
 w_lower = double(SOS_soln.eval(w_lower));
 w_upper = double(SOS_soln.eval(w_upper));
 
-% W_mat = zeros(n);
-% dW_p_mat = zeros(n);
-% dW_vy_mat = zeros(n);
-
-dW_vz_mat = zeros(n);
-dW_pd_mat = zeros(n);
-
-W_upper_mat = zeros(n);
 
 if (return_metric)
     if (solved==0)
@@ -171,9 +161,9 @@ if (return_metric)
         dw_poly_p = diff(w_poly,x(5));
         dw_poly_vy = diff(w_poly,x(3));
         
-        W_upper_mat = clean(double(SOS_soln.eval(W_upper)),1e-3);
+        W_upper = clean(double(SOS_soln.eval(W_upper)),1e-3);
         
-        pause;
+%         pause;
         
         %% Create monomial functions
         w_poly_fnc = mss2fnc(w_poly,x,randn(length(x),2));
@@ -182,8 +172,6 @@ if (return_metric)
         
         %% Put together
         W_exec = 'W_eval = @(ml)';
-%         dW_x1_exec = 'dW_x1_mat = @(ml)';
-%         dW_x2_exec = 'dW_x2_mat = @(ml)';
         
         for i = 1:length(w_poly)
             if i<length(w_poly)
@@ -192,19 +180,10 @@ if (return_metric)
                 W_exec = strcat(W_exec,sprintf('W_sol(:,:,%d)*ml(%d);',i,i));
             end
         end
-%         for i = 2:length(w_poly)
-%             if i<length(w_poly)
-%                 dW_x1_exec = strcat(dW_x1_exec,sprintf('W_sol(:,:,%d)*ml(%d) +',i,i));
-%                 dW_x2_exec = strcat(dW_x2_exec,sprintf('W_sol(:,:,%d)*ml(%d) +',i,i));
-%             else
-%                 dW_x1_exec = strcat(dW_x1_exec,sprintf('W_sol(:,:,%d)*ml(%d);',i,i));
-%                 dW_x2_exec = strcat(dW_x2_exec,sprintf('W_sol(:,:,%d)*ml(%d);',i,i));
-%             end
-%         end
 
         %% Execute
         eval(W_exec);
-%         eval(W_exec); eval(dW_x1_exec); eval(dW_x2_exec);
+        save('metric_PVTOL_red_vectorized.mat','W_eval','w_poly_fnc','dw_poly_p_fnc','dw_poly_vy_fnc','W_upper');
     end
 end
 end
