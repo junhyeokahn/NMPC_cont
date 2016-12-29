@@ -97,7 +97,7 @@ return_metric = 1;
 %% Compute control bounds using optimal metric (W = const matrix)
 load('metric_Allgower.mat');
 
-M = W_upper\eye(2);
+M = W_eval(1)\eye(2); %W= const.
 alpha = max(eig(M));
 w = 0.1;
 d_bar = sqrt(alpha)*w/lambda;
