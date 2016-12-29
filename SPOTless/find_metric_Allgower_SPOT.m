@@ -88,13 +88,13 @@ options = spot_sdp_default_options();
 options.verbose = return_metric;
 
 %Norm constraint
-% free_vars = [prog.freeVar];
-% len = length(free_vars);
-% [prog, a] = prog.newPos(len);
-% prog = prog.withPos(-free_vars + a);
-% prog = prog.withPos(free_vars + a);
+free_vars = [prog.freeVar];
+len = length(free_vars);
+[prog, a] = prog.newPos(len);
+prog = prog.withPos(-free_vars + a);
+prog = prog.withPos(free_vars + a);
 try
-    SOS_soln = prog.minimize(w_upper, @spot_mosek, options);
+    SOS_soln = prog.minimize(sum(a), @spot_mosek, options);
 catch
     %failed
     solved = 1;

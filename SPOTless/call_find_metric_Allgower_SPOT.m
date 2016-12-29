@@ -97,18 +97,6 @@ return_metric = 1;
 %% Compute control bounds using optimal metric (W = const matrix)
 load('metric_Allgower.mat');
 
-M = W_eval(1)\eye(2); %W= const. otherwise - replace with W_upper
-alpha = max(eig(M));
-w = 0.1;
-d_bar = sqrt(alpha)*w/lambda;
-
-%Compare RCI sets
-P_rci = diag([39.0251, 486.0402]);
-
-figure()
-Ellipse_plot(M*(1/d_bar^2),[0;0],20,'k');
-Ellipse_plot(P_rci,[0;0],20,'r');
-
 f_mat = @(x) [-1*x(1) + 2*x(2);
     -3*x(1) + 4*x(2) - 0.25*(x(2)^3)];
 
@@ -116,24 +104,30 @@ df_mat = @(x) [-1, 2;
      -3, 4-0.75*x(2)^2];
 B = [0.5;-2];
 B_perp = [2;0.5];
+Bw = [0;1];
 
 x1_range = linspace(-x1_lim,x1_lim,30);
 x2_range = linspace(-x2_lim,x2_lim,30);
-delta_u = zeros(length(x2_range),length(x1_range),1);
+delta_u = zeros(length(x2_range),length(x1_range));
 eig_CCM = delta_u;
+sigma_ThBw = zeros(length(x2_range),length(x1_range));
 
 for i = 1:length(x2_range)
     for j = 1:length(x1_range)
         x = [x1_range(j); x2_range(i)];
+        
+        W = W_eval(w_poly_fnc(x));
+        M = W\eye(2);
+        sigma_ThBw(i,j) = max(sqrt(eig(Bw'*M*Bw)));
+        
+        L = chol(W);
         f = f_mat(x);
         df = df_mat(x);
-        W = W_eval(w_poly_fnc(x));
-        L = chol(W);
-        
+       
         F_sol = -W_eval(dw_poly_x1_fnc(x))*f(1) - W_eval(dw_poly_x2_fnc(x))*f(2) + ...
             df_mat(x)*W + W*df_mat(x)' + 2*lambda*W;
     
-        delta_u(i,j) = 0.5*d_bar*max(eig((inv(L))'*F_sol*inv(L)))/...
+        delta_u(i,j) = 0.5*max(eig((inv(L))'*F_sol*inv(L)))/...
                           sqrt(max(eig((inv(L))'*(B*B')*inv(L))));
                       
         eig_CCM(i,j) = min(eig(B_perp'*(-F_sol)*B_perp));
@@ -146,6 +140,18 @@ grid on
 xlabel('x1'); ylabel('x2'); zlabel('$\bar{\delta}_u$','interpreter','latex');
 set(findall(gcf,'type','text'),'FontSize',28);set(gca,'FontSize',28)
 
-disp('control:'); disp(max(delta_u(:)));
+w = 0.1;
+d_bar = max(sigma_ThBw(:))*w/lambda;
+disp('d_bar:'); disp(d_bar);
+disp('control:'); disp(max(delta_u(:))*d_bar);
 disp('CCM:'); disp(min(eig_CCM(:)));
+
+M = W_eval(1)\eye(2); %W= const. otherwise - replace with W_upper
+
+%Compare RCI sets
+P_rci = diag([39.0251, 486.0402]);
+
+figure()
+Ellipse_plot(M*(1/d_bar^2),[0;0],20,'k');
+Ellipse_plot(P_rci,[0;0],20,'r');
 
