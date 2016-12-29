@@ -114,7 +114,7 @@ if (return_metric)
         W_sol = zeros(2,2,length(w_poly));
         NNZ_list = zeros(length(w_poly),1);
         for i = 1:length(w_poly)
-            W_sol(:,:,i) = clean(double(SOS_soln.eval(W_list{i})),1e-3);
+            W_sol(:,:,i) = clean(double(SOS_soln.eval(W_list{i})),1e-4);
             if sum(sum(abs(W_sol(:,:,i)))) > 0
                 NNZ_list(i) = 1;
             end
@@ -125,7 +125,7 @@ if (return_metric)
         dw_poly_x1 = diff(w_poly,x(1));
         dw_poly_x2 = diff(w_poly,x(2));
         
-        W_upper = clean(double(SOS_soln.eval(W_upper)),1e-3);
+        W_upper = clean(double(SOS_soln.eval(W_upper)),1e-4);
         
 %         pause;
         

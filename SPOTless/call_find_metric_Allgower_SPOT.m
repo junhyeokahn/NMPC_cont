@@ -134,14 +134,16 @@ for i = 1:length(x2_range)
     end
 end
 
+w = 0.1;
+d_bar = max(sigma_ThBw(:))*w/lambda;
+
 figure()
-surf(x1_range,x2_range,delta_u);
+surf(x1_range,x2_range,d_bar*delta_u);
 grid on
 xlabel('x1'); ylabel('x2'); zlabel('$\bar{\delta}_u$','interpreter','latex');
 set(findall(gcf,'type','text'),'FontSize',28);set(gca,'FontSize',28)
 
-w = 0.1;
-d_bar = max(sigma_ThBw(:))*w/lambda;
+
 disp('d_bar:'); disp(d_bar);
 disp('control:'); disp(max(delta_u(:))*d_bar);
 disp('CCM:'); disp(min(eig_CCM(:)));
@@ -152,6 +154,7 @@ M = W_eval(1)\eye(2); %W= const. otherwise - replace with W_upper
 P_rci = diag([39.0251, 486.0402]);
 
 figure()
-Ellipse_plot(M*(1/d_bar^2),[0;0],20,'k');
+Ellipse_plot((W_upper\eye(2))*(1/d_bar^2),[0;0],20,'c'); hold on
+Ellipse_plot(M*(1/d_bar^2),[0;0],20,'k',0.6); 
 Ellipse_plot(P_rci,[0;0],20,'r');
 
