@@ -22,13 +22,13 @@ th_lim_high = 2*g;
 
 % lambda_range = linspace(0.1,4.0,13);
 % lambda_range = (1/100)*round(lambda_range*100);
-% lambda_range = 0.5;
+% lambda_range = 0.75;
 % euc_bounds = NaN(length(lambda_range),1);
 % d_bars = NaN(length(lambda_range),1);
 % cond_bound = NaN(length(lambda_range),1);
 % 
-% eps = 0.5;
-% condn_prev = 8.75;
+% eps = 0.1;
+% condn_prev = 17;
 % return_metric = 0;
 % 
 % for ll = 1:length(lambda_range)
@@ -36,7 +36,7 @@ th_lim_high = 2*g;
 %     
 %     fprintf('**********\n');
 %     fprintf('lambda: %f\n', lambda);
-%     solved = 1;
+%     solved = 0;
 %     
 %     %Determine upper bound
 %     cond_l = condn_prev;
@@ -68,7 +68,7 @@ th_lim_high = 2*g;
 %         fprintf(' cond: %.2f', condn);
 %         try
 %             [sos_prob,w_lower,w_upper] = find_metric_QUAD_SPOT_89(n,g,r_lim,p_lim,th_lim_low,th_lim_high,vx_lim,vy_lim,vz_lim,...
-%                 condn,lambda,ccm_eps,return_metric);
+%             condn,lambda,ccm_eps,return_metric);
 %         catch
 %             sos_prob = 1; 
 %         end
@@ -97,8 +97,8 @@ th_lim_high = 2*g;
 %% Pick a solution
 
 % load metric_FLR_comp_final.mat;
-lambda = 0.5;
-condn = 10.3;
+lambda = 0.75;
+condn = 21;
 return_metric = 1;
 
 [sos_prob,w_lower,w_upper] = find_metric_QUAD_SPOT_89(n,g,r_lim,p_lim,th_lim_low,th_lim_high,vx_lim,vy_lim,vz_lim,...
@@ -107,6 +107,7 @@ return_metric = 1;
 %% Compute aux control bound
 load 'metric_QUAD_vectorized.mat';
 disp('Checking CCM conditions and Computing control bound...');
+% lambda = 0.98*lambda;
 
 Bw = [zeros(3);
     eye(3);
@@ -175,7 +176,6 @@ disp('CCM:'); disp(min(eig_CCM(:)));
 disp('euc_bounds');
 disp(d_bar*sqrt(diag(W_upper_mat)));
 
-pause;
 
 
 

@@ -1,4 +1,4 @@
-function [solved, w_lower, w_upper, w_poly_fnc, dw_poly_x1_fnc, dw_poly_x2_fnc, W_eval, W_upper_mat] = find_metric_FLR_SPOT(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
+function [solved, w_lower, w_upper] = find_metric_FLR_SPOT(n,m,g,l,I,J,b,sigma,x1_lim,x2_lim,x3_lim,...
     condn, lambda, ccm_eps,return_metric)
 
 W_scale = diag([0.01; 0.0005; 0.01; 0.0005]);
@@ -62,21 +62,6 @@ for i = 2:length(w_poly)
     W = W + W_list{i}*w_poly(i);
 end
 
-% [prog, w_poly] = prog.newFreePoly(monomials(w_states,0:w_order),n*(n+1)/2);
-% 
-% W = [];
-% ind = 1;
-% for i = 1:n
-%     W = [W; zeros(1,i-1), w_poly(ind:ind+(n-i))'];
-%     ind = ind+(n-i)+1;
-% end
-% for i = 2:n
-%     for j = 1:(i-1)
-%         W(i,j) = W(j,i);
-%     end
-% end
-
-
 [prog, W_upper] = prog.newPSD(n);
 
 dW_f = diff(W(:),x(1))*f;
@@ -128,15 +113,18 @@ prog = prog.withPos(-free_vars + a);
 prog = prog.withPos(free_vars + a);
 
 SOS_soln = prog.minimize(trace(W_scale*W_upper) + (1e-3)*sum(a), @spot_mosek, options);
+try
+    solved = ~SOS_soln.status.strcmp('STATUS_PRIMAL_AND_DUAL_FEASIBLE');
+catch
+    %failed
+    solved = 1;
+    w_lower = 0;
+    w_upper = 0;
+    return;
+end
 
-solved = ~SOS_soln.status.strcmp('STATUS_PRIMAL_AND_DUAL_FEASIBLE');
 w_lower = double(SOS_soln.eval(w_lower));
 w_upper = double(SOS_soln.eval(w_upper));
-
-W_mat = zeros(4);
-dW_x1_mat = zeros(4);
-dW_x2_mat = zeros(4);
-W_upper_mat = zeros(4);
 
 if (return_metric)
     if (solved==0)
@@ -161,8 +149,6 @@ if (return_metric)
    
         %% Put together
         W_exec = 'W_eval = @(ml)';
-%         dW_x1_exec = 'dW_x1_mat = @(ml)';
-%         dW_x2_exec = 'dW_x2_mat = @(ml)';
         
         for i = 1:length(w_poly)
             if i<length(w_poly)
@@ -171,19 +157,10 @@ if (return_metric)
                 W_exec = strcat(W_exec,sprintf('W_sol(:,:,%d)*ml(%d);',i,i));
             end
         end
-%         for i = 2:length(w_poly)
-%             if i<length(w_poly)
-%                 dW_x1_exec = strcat(dW_x1_exec,sprintf('W_sol(:,:,%d)*ml(%d) +',i,i));
-%                 dW_x2_exec = strcat(dW_x2_exec,sprintf('W_sol(:,:,%d)*ml(%d) +',i,i));
-%             else
-%                 dW_x1_exec = strcat(dW_x1_exec,sprintf('W_sol(:,:,%d)*ml(%d);',i,i));
-%                 dW_x2_exec = strcat(dW_x2_exec,sprintf('W_sol(:,:,%d)*ml(%d);',i,i));
-%             end
-%         end
 
         %% Execute
         eval(W_exec);
-%         eval(W_exec); eval(dW_x1_exec); eval(dW_x2_exec);
+        save('metric_FLR_vectorized.mat','W_eval','w_poly_fnc','dw_poly_x1_fnc','W_upper');
         
     end
 end

@@ -42,7 +42,7 @@ vz_lim = 1.0;
 %     cond_u = 1.2*condn_prev;
 %     while (~solved) 
 %         fprintf(' cond_u: %.2f: ', cond_u);
-%         [sos_prob,~,~,~,~,~,~,~] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+%         [sos_prob,~,~] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
 %                                 cond_u,lambda,ccm_eps,return_metric);
 %         if (sos_prob == 0)
 %             solved = 1;
@@ -66,7 +66,7 @@ vz_lim = 1.0;
 %         condn = (cond_l+cond_u)/2;
 %         fprintf(' cond: %.2f', condn);
 %         
-%         [sos_prob, w_lower, w_upper,~,~,~,~,~] = find_metric_PVTOL(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+%         [sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
 %                                 condn,lambda,ccm_eps,return_metric);
 %         
 %         if (sos_prob == 0)
@@ -99,18 +99,14 @@ condn = 132.8;
 % condn = 128.55;
 return_metric = 1;
 
-[sos_prob, w_lower, w_upper,w_poly_fnc, dw_poly_p_fnc, dw_poly_vy_fnc,~, ~,W_eval, W_upper] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+[sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
                                 condn,lambda,ccm_eps,return_metric);
 
-save('metric_PVTOL_vectorized.mat','W_eval','w_poly_fnc','dw_poly_p_fnc','dw_poly_vy_fnc','W_upper');
-% load('metric_PVTOL.mat');
-
 %% Compute aux control bound
+load('metric_PVTOL_vectorized.mat');
 
 disp('Checking CCM conditions and Computing control bound...');
 lambda = 0.998*lambda;
-% dw_poly_p_fnc = dW_p_mat;
-% dw_poly_vy_fnc = dW_vy_mat;
 
 dW_vz_fnc = @(x) zeros(n);
 dW_pd_fnc = @(x) zeros(n);
@@ -127,8 +123,6 @@ Bw = @(x)[zeros(1,3),cos(x(3)),-sin(x(3)),0]';
 B_perp = [eye(4);
         zeros(2,4)];
 
-% d_bar = sqrt(double(1/w_lower))/lambda; %normalized
-
 ctrl_N = 12;
 p_range = linspace(-p_lim, p_lim, ctrl_N);
 vy_range = linspace(-vy_lim, vy_lim, ctrl_N);
@@ -144,20 +138,12 @@ df_mat = @(x) [0,0,-x(4)*sin(x(3))-x(5)*cos(x(3)),cos(x(3)),-sin(x(3)),0;
                0,0,-g*cos(x(3)),0,x(6),x(5);
                0,0, g*sin(x(3)),-x(6),0,-x(4);
                zeros(1,6)];
-% df_mat = @(x) [0,0,-x(4)*sin_x(x(3))-x(5)*cos_x(x(3)),cos_x(x(3)),-sin_x(x(3)),0; 
-%                0,0, x(4)*cos_x(x(3))-x(5)*sin_x(x(3)),sin_x(x(3)), cos_x(x(3)),0;
-%                zeros(1,5),1;
-%                0,0,-g*cos_x(x(3)),0,x(6),x(5);
-%                0,0, g*sin_x(x(3)),-x(6),0,-x(4);
-%                zeros(1,6)];
 
 f_mat = @(x) [x(6); %p_dot
               x(6)*x(5) - g*sin(x(3)); %vy_dot
               -x(6)*x(4) - g*cos(x(3)); %vz_dot
               0]; %pd_dot
           
-% f_mat = @(x) [x(6); %p_dot
-%               x(6)*x(5) - g*sin_x(x(3))]; %vy_dot
 
 delta_u = zeros(ctrl_N,ctrl_N,ctrl_N,ctrl_N);
 eig_CCM = zeros(ctrl_N, ctrl_N, ctrl_N, ctrl_N);
