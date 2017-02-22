@@ -19,6 +19,8 @@ global geodesic_MPC;
 [geo_Prob,geo_Ke,T_e,T_dot_e,geo_Aeq] = ...
         setup_geodesic_calc(n,geodesic_N,W_fnc,dW_fnc,n_W);
     
+geo_solver = 'snopt';    
+    
 geo_warm = struct('sol',0,'result',[]);    
 
 %% Setup MP numerics
@@ -73,7 +75,7 @@ tic
 [X, X_dot,J_opt,converged_geo,geo_result,geo_Prob] = ...
     compute_geodesic_tom(geo_Prob,n,geodesic_N,...
             MP_state(1,:)',test_state,...
-            T_e,T_dot_e,geo_Aeq,geo_warm);
+            T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
 toc;
 disp('Geo dist: ');disp(converged_geo);
 disp(sqrt(J_opt));
@@ -85,7 +87,7 @@ tic
 [~, ~,J_opt,converged_geo,geo_result_MPC,geo_Prob_MPC] = ...
     compute_geodesic_tom(geodesic_MPC.geo_Prob,n,geodesic_N,...
             MP_state(1,:)',test_state,...
-            T_e,T_dot_e,geo_Aeq,geodesic_MPC.warm);
+            T_e,T_dot_e,geo_Aeq,geodesic_MPC.warm,'npsol');
 toc;
 disp('MPC Geo dist: '); disp(converged_geo);
 disp(sqrt(J_opt));
@@ -191,12 +193,10 @@ if (~track_traj)
             fprintf('%d/%d:',i,T_steps);
             
             [~, ~,J_opt,~,~,geo_Prob] = compute_geodesic_tom(geo_Prob,...
-                n,geodesic_N,state_0_MPC,state_0,T_e,T_dot_e,geo_Aeq,geo_warm);
+                n,geodesic_N,state_0_MPC,state_0,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
             geo_energy(i,1) = J_opt;
             
             if (i>1)
-%                 E_prev = geo_energy(1+(i_mpc-1)*(delta/dt_sim),2);
-%                 E_bnd = (sqrt(E_prev)*exp(-lambda*delta) + d_bar*(1-exp(-lambda*delta)))^2;
                 E_bnd = J_opt;
             else
                 E_bnd = (d_bar)^2;
@@ -222,7 +222,7 @@ if (~track_traj)
             u_nom = MPC_ctrl{i_mpc}(1:round(dt_sim/dt)+1,:);
             
             [~, ~,J_opt,~,geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,n,geodesic_N,...
-                x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm);
+                x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
             
             geo_energy(i,2) = J_opt;
             geo_warm.result = geo_result;
@@ -238,7 +238,7 @@ if (~track_traj)
         %Optimal Control
         tic
         [X, X_dot,J_opt,opt_solved(i,2),geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,...
-            n,geodesic_N,x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm);
+            n,geodesic_N,x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
         ctrl_solve_time(i,2) = toc;
         
         Geod{i} = X';
@@ -276,7 +276,7 @@ else
         %Optimal Control
         tic
         [X, X_dot,J_opt,opt_solved(i,2),geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,...
-            n,geodesic_N,x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm);
+            n,geodesic_N,x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
         ctrl_solve_time(i,2) = toc;
         
         Geod{i} = X';
