@@ -87,7 +87,7 @@ alpha = 1e-3;
 %% Simulation constraints
 
 state_constr_low = -[pi;5;pi;5]+euc_bound;
-state_constr = [state_constr_low, -state_constr_low];
+state_constr
 ctrl_constr = [-35+ctrl_bound, 35-ctrl_bound];
            
 q_eq = 0*(pi/180);

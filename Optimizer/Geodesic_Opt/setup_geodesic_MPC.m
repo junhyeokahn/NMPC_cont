@@ -35,9 +35,8 @@ end
 % Ti = cell(length(n_W),1);
 Ti = zeros(n*(N+1),K+1,length(n_W));
 In = eye(n);
-for j = 1:length(n_W)
-    i = n_W(j);
-%     Ti{j} = sparse(kron(In(:,i),T));
+for j = 1:length(n_W) 
+    i = n_W(j); %state that W is a fnc of
     Ti(:,:,j) = kron(In(:,i),T);
 end
 

@@ -1,5 +1,4 @@
 clear all; close all; clc;
-yalmip('clear');
 
 warning('off','MATLAB:lang:badlyScopedReturnValue');
 
