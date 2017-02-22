@@ -22,7 +22,7 @@ c(1:n*(N+1)) = (2/Tp)*D*xu(1:n*(N+1)) -...
 
 % tic
 [~, X_dot,J_opt,~,geo_result,~] = compute_geodesic_tom(geodesic_MPC.geo_Prob,...
-    n,geodesic_MPC.geodesic_N,xu(1:n),Prob.user.x_act,geodesic_MPC.T_e,geodesic_MPC.T_dot_e,geodesic_MPC.geo_Aeq,geodesic_MPC.warm);
+    n,geodesic_MPC.geodesic_N,xu(1:n),Prob.user.x_act,geodesic_MPC.T_e,geodesic_MPC.T_dot_e,geodesic_MPC.geo_Aeq,geodesic_MPC.warm,geodesic_MPC.solver);
 % NMPC_GEOD(GEOD_ITER,2) = toc;
 US_A = X_dot(:,1);
 geodesic_MPC.warm.sol = 1; geodesic_MPC.warm.result = geo_result;

@@ -3,9 +3,11 @@
 %2D State Plot
 figure(1)
 hold on
+%Nominal motion plan
 plot(MP_state(:,1),MP_state(:,2),'g--','linewidth',1);
 if (~track_traj)
     for i_mpc = 1:T_steps_MPC
+        %MPC reference trajectory exectued segement
         plot(MPC_state{i_mpc}(1:round(delta/dt)+1,1),MPC_state{i_mpc}(1:round(delta/dt)+1,2),'r--','linewidth',1.5);
         
         if i_mpc<T_steps_MPC
@@ -14,14 +16,17 @@ if (~track_traj)
             num_pnts = 5;
         end
         
+        %Outer geodesic ball at start of MPC segment
         E_start = geo_energy(1+(i_mpc-1)*(delta/dt_sim),2);
         Ellipse_plot(M_ccm_pos_unscaled*(1/E_start),MPC_state{i_mpc}(1,1:2)',30,'g');
         
         t_mpc_span = linspace(0,delta,num_pnts);
+        %Evolution of outer geodesic ball over MPC segment
         for j = 2:length(t_mpc_span)-1
             E_j = (sqrt(E_start)*exp(-lambda*t_mpc_span(j)) + d_bar*(1-exp(-lambda*t_mpc_span(j))))^2;
             Ellipse_plot(M_ccm_pos_unscaled*(1/E_j),MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,'y');
         end
+        %Final outer geodesic ball
         E_end = (sqrt(E_start)*exp(-lambda*delta) + d_bar*(1-exp(-lambda*delta)))^2;
         Ellipse_plot(M_ccm_pos_unscaled*(1/E_end),MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'r');
     end

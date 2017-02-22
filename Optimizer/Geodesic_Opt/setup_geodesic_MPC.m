@@ -68,6 +68,6 @@ geo_warm = struct('sol',0,'result',[]);
 % Assemble geodesic struct for MPC
 global geodesic_MPC;
 geodesic_MPC = struct('geo_Prob',geo_Prob,'W',W,'geodesic_N',N,'T_e',T_e,'T_dot_e',T_dot_e,...
-                      'geo_Aeq',Aeq,'warm',geo_warm);
+                      'geo_Aeq',Aeq,'warm',geo_warm, 'solver','npsol');
 
 end
