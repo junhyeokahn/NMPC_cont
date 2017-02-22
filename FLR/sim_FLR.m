@@ -196,3 +196,7 @@ plot([0:dt:t_end],cumtrapz([0:dt:t_end],J_nom_mp),'r-','linewidth',2);
 grid on
 xlabel('Time [s]'); grid on;
 hold on
+
+%% Movie sim
+
+plot_FLR_movie(solve_t,x_act,round(0.05/dt_sim));
