@@ -102,7 +102,7 @@ load MPC_WARM_PVTOL.mat;
 %% Test MPC solve
 tic
 [MPC_state,~,converged_MPC,mpc_warm,MPC_Prob] = compute_NMPC(MPC_Prob,...
-    test_state,MP_state(1,:)',state_constr,ctrl_constr,MP_state,MP_ctrl,...
+    test_state,state_constr,ctrl_constr,MP_state,MP_ctrl,...
     n,m,N_mpc,L_e_mpc,mpc_warm,dt,(d_bar)^2);
 toc
 disp('MPC:');disp(converged_MPC);
@@ -130,7 +130,7 @@ keyboard;
 
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
-t_end = 10;
+t_end = 20;
 solve_t = (0:dt_sim:t_end)';
 T_steps = length(solve_t)-1;
 
@@ -189,7 +189,7 @@ if (~track_traj)
             end
             tic
             [MPC_x,MPC_u,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
-                compute_NMPC(MPC_Prob,state_0,state_0_MPC,state_constr,ctrl_constr,MP_state,MP_ctrl,...
+                compute_NMPC(MPC_Prob,state_0,state_constr,ctrl_constr,MP_state,MP_ctrl,...
                 n,m,N_mpc,L_e_mpc,mpc_warm,dt,E_bnd);
             ctrl_solve_time(i,1) = toc;
             
@@ -325,3 +325,5 @@ plot([0:dt:t_end],cumtrapz([0:dt:t_end],J_nom_mpc),'b-','linewidth',2);
 
 
 %% 
+
+plot_PVTOL_movie;

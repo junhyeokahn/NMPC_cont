@@ -2,7 +2,7 @@
 close all;
 clc;
 
-t_step = (0.004/dt_sim);
+t_step = (0.06/dt_sim);
 
 [U_pos,S_pos,V_pos] = svd(M_ccm_pos);
 S_new = (sqrt(S_pos\eye(2)) + 0*eye(2))^2\eye(2);
@@ -82,7 +82,7 @@ xlim(1.1*[-5,5]); ylim(1.1*[-5,5]);
 grid off
 
 axis manual;
-% pause;
+keyboard;
 for i = t_step:t_step:length(solve_t)
     
     quad_p = quad_bound;
