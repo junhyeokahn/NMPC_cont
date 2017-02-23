@@ -107,6 +107,7 @@ alpha = 1e-3;
 %% Simulation constraints
 
 state_constr_low = -[5.5;5.5;pi/4;2;1;pi/3]+euc_bound;
+state_constr = [state_constr_low, -state_constr_low];
 ctrl_constr = [0.1*mass*g+ctrl_bound, 2*mass*g-ctrl_bound;
                0.1*mass*g+ctrl_bound, 2*mass*g-ctrl_bound];
            

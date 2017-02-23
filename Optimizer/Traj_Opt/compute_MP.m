@@ -4,8 +4,10 @@ function [NMPC_state,NMPC_ctrl,converged,warm] = ...
 
 %adjust initial nominal state guess
 for i = 1:n
-    if abs(mpc_state(i)) > abs(state_constr(i));
-        mpc_state(i) = 0.98*sign(mpc_state(i))*abs(state_constr(i));
+    if mpc_state(i) > state_constr(i,2)
+        mpc_state(i) = state_constr(i,2)-0.01*(state_constr(i,2)-state_const(i,1));
+    elseif mpc_state(i) < state_constr(i,1)
+        mpc_state(i) = state_constr(i,1)+0.01*(state_constr(i,2)-state_const(i,1));
     end
 end
 

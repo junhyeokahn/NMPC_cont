@@ -3,11 +3,12 @@ warning('off','MATLAB:nargchk:deprecated');
          
 %% Load non-linear system
 
-load_FLR_config;
+load_PVTOL_config;
 
 %% Setup Geodesic numerics
 
-geodesic_N = 3;
+%PVTOL
+geodesic_N = 2;
 
 setup_geodesic_MPC(n,geodesic_N,W_fnc,dW_fnc,n_W); %initializes geodesic_MPC struct
 global geodesic_MPC;
@@ -15,26 +16,30 @@ global geodesic_MPC;
 [geo_Prob,geo_Ke,T_e,T_dot_e,geo_Aeq] = ...
         setup_geodesic_calc(n,geodesic_N,W_fnc,dW_fnc,n_W);
     
-geo_solver = 'snopt';    
+geo_solver = 'npsol';    
     
 geo_warm = struct('sol',0,'result',[]);    
 
 %% Setup MP numerics
 
-Tp = 7;
+% PVTOL:
+Tp = 28;
 dt = 0.001;
-N_mp = 70;
+N_mp = 120;
 
+T_mpc = 3;
 dt_sim = 0.002;
+delta = 1;
+N_mpc = 14;
 
 % Setup motion planning problem
 [MP_Prob,L_e_mp,MP_st] = setup_MP(n,m,...
-    f,B,df,state_constr,ctrl_constr,...
+    f,B,df, state_constr ,ctrl_constr,...
     N_mp,Tp,dt,...
     P,alpha,(0.98*d_bar)^2,...
     x_eq,obs,'MP');
 
-load MP_WARM_FLR.mat;
+load MP_WARM_PVTOL.mat;
 % mp_warm = struct('Tp',Tp,'shift',0,'sol',0,...
 %                   's_t',MP_st,'state',[],'ctrl',[],'result',[]);
 
@@ -42,7 +47,7 @@ load MP_WARM_FLR.mat;
       
 tic
 [MP_state,MP_ctrl,converged_MP,mp_warm] = compute_MP(MP_Prob,...
-    test_state,test_state,state_constr_low,ctrl_constr,x_eq,u_eq,...
+    test_state,test_state,state_constr,ctrl_constr,x_eq,u_eq,...
     n,m,N_mp,L_e_mp,mp_warm);
 toc
 disp('MP:'); disp(converged_MP);
@@ -52,7 +57,7 @@ save('MP_WARM_PVTOL.mat','mp_warm');
 
 %% Visualize
 
-visualize_FLR;
+visualize_PVTOL;
 
 %% Test Geodesic Numerics
 
@@ -81,8 +86,34 @@ geodesic_MPC.geo_Prob = geo_Prob_MPC;
 geodesic_MPC.warm.sol = 1;
 geodesic_MPC.warm.result = geo_result_MPC;
 
-% pause;
-         
+%% Setup MPC numerics
+
+[MPC_Prob,L_e,L_e_mpc,MPC_st] = setup_NMPC(n,m,...
+    f,B,df, state_constr,ctrl_constr,...
+    N_mpc,T_mpc,delta,dt,...
+    P,alpha,d_bar^2,...
+    x_eq,obs_mpc,'MPC');
+
+load MPC_WARM_PVTOL.mat;
+
+% mpc_warm = struct('Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
+%                   's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
+
+%% Test MPC solve
+tic
+[MPC_state,~,converged_MPC,mpc_warm,MPC_Prob] = compute_NMPC(MPC_Prob,...
+    test_state,MP_state(1,:)',state_constr,ctrl_constr,MP_state,MP_ctrl,...
+    n,m,N_mpc,L_e_mpc,mpc_warm,dt,(d_bar)^2);
+toc
+disp('MPC:');disp(converged_MPC);
+
+MPC_Prob.CHECK = 1;
+mpc_warm.sol = 1;
+save('MPC_WARM_PVTOL.mat','mpc_warm');
+
+figure(1)
+plot(MPC_state(:,1),MPC_state(:,2),'r-','linewidth',2);
+                
 %% Setup Auxiliary controller
 
 tic
@@ -92,14 +123,25 @@ toc;
 disp('opt_control:');disp(converged_aux);
 disp(ctrl_opt);
 
+
 %% Set up non-linear sim
+disp('Ready to Simulate');
+keyboard;
 
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
-t_end = Tp;
+t_end = 10;
 solve_t = (0:dt_sim:t_end)';
 T_steps = length(solve_t)-1;
 
+dt_MPC = delta;
+solve_MPC = (0:dt_MPC:t_end)';
+T_steps_MPC = length(solve_MPC)-1;
+
+MPC_state = cell(T_steps_MPC,1);
+MPC_ctrl = cell(T_steps_MPC,1);
+
+accel_nom = zeros(T_steps,2);
 w_dist = zeros(T_steps,2);
 
 x_act = zeros(T_steps+1,n);
@@ -120,10 +162,13 @@ geo_energy(:,2) = NaN;
 
 x_act(1,:) = test_state';
 state_0 = test_state;
+state_0_MPC = MP_state(1,:)';
 
+i_mpc = 0;
+      
 %% Simulate
 
-FL_ctrl = 0; %compare
+track_traj = 0; %follow initial MP instead of MPC resolves
 
 if (~track_traj)
     for i = 1:T_steps
@@ -144,7 +189,7 @@ if (~track_traj)
             end
             tic
             [MPC_x,MPC_u,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
-                compute_NMPC(MPC_Prob,state_0,state_0_MPC,state_constr_low,ctrl_constr,MP_state,MP_ctrl,...
+                compute_NMPC(MPC_Prob,state_0,state_0_MPC,state_constr,ctrl_constr,MP_state,MP_ctrl,...
                 n,m,N_mpc,L_e_mpc,mpc_warm,dt,E_bnd);
             ctrl_solve_time(i,1) = toc;
             
@@ -187,7 +232,7 @@ if (~track_traj)
         geo_warm.result = geo_result;
         
         tic
-        [Aux_ctrl(i,:),opt_solved(i,3)] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
+        [Aux_ctrl(i,:),opt_solved(i,3)] = compute_opt_aux(geo_Ke,X,X_dot,J_opt,...
             W_fnc,f,B,u_nom(1,:)',lambda);
         ctrl_solve_time(i,3) = toc;
         
@@ -196,11 +241,7 @@ if (~track_traj)
         
         %Simulate Optimal
         w_dist(i,:) = w_max*[cos(x_act(i,3));
-            -sin(x_act(i,3))]';
-        
-        %     dist_dir = (X_dot(:,geo_Ke+1))'*(W_mat(state_0)\eye(n))*B_w;
-        %     w_dist(i,:) = w_max*(dist_dir/norm(dist_dir));
-        %     w_dist = zeros(2,1);
+                            -sin(x_act(i,3))]';
         
         [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,[solve_t(i):dt:solve_t(i+1)]',u_nom,Aux_ctrl(i,:),...
             f_true,B_true,B_w_true,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state_0,ode_options);
@@ -225,27 +266,15 @@ else
         geo_warm.result = geo_result;
         geo_warm.sol = 1;
         
-        if (~FL_ctrl)
-            tic
-            [Aux_ctrl(i,:),opt_solved(i,3)] = compute_opt_aux(aux_Prob,geo_Ke,X,X_dot,J_opt,...
-                W_fnc,f,B,u_nom(1,:)',lambda);
-            ctrl_solve_time(i,3) = toc;
-        else
-            xi_nom = phi(x_nom');
-            xi_act = phi(state_0);
-            
-            v_aux = -K_FL*(xi_act - xi_nom);
-            u_net = (1/B_tilde)*(v_aux + (f_tilde(x_nom) + B_tilde*u_nom(1,:)') - (f_tilde(state_0)));
-            Aux_ctrl(i,:) = u_net' - u_nom(1,:);
-        end
+        tic
+        [Aux_ctrl(i,:),opt_solved(i,3)] = compute_opt_aux(geo_Ke,X,X_dot,J_opt,...
+            W_fnc,f,B,u_nom(1,:)',lambda);
+        ctrl_solve_time(i,3) = toc;
         
         True_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = u_nom+kron(ones((dt_sim/dt)+1,1),Aux_ctrl(i,:));
         Nom_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = u_nom;
         
         %Disturbance model
-%         dist_dir = (X_dot(:,geo_Ke+1))'*(W_mat(state_0)\eye(n))*B_w;
-%         w_dist(i,:) = w_max*(dist_dir/norm(dist_dir));
-%         w_dist(i,:) = -(w_max/sqrt(2))*[1,1];
         w_dist(i,:) = w_max*[cos(x_act(i,3));
                             -sin(x_act(i,3))]';
         
@@ -259,8 +288,7 @@ end
 
 %% Plots
 
-% close all;
-% plot_FLR;
+close all;
 plot_PVTOL;
 
 %% Evaluate cost
@@ -285,7 +313,7 @@ disp('NOMINAL MP COST:'); disp(trapz([0:dt:t_end],J_nom_mp));
 figure()
 plot([0:dt:t_end],cumtrapz([0:dt:t_end],J_nom_mp),'r-','linewidth',2);
 grid on
-xlabel('Time [s]'); grid on;
+xlabel('Time [s]'); ylabel('Accumulated cost'); grid on;
 hold on
 
 J_nom_mpc = zeros((t_end/dt)+1,1);
@@ -295,3 +323,5 @@ end
 disp('NOMINAL MPC COST:'); disp(trapz([0:dt:t_end],J_nom_mpc));
 plot([0:dt:t_end],cumtrapz([0:dt:t_end],J_nom_mpc),'b-','linewidth',2);
 
+
+%% 

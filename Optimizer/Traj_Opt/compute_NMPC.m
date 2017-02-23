@@ -16,10 +16,13 @@ if (~warm.sol)
     for k = 1:N+1
         x_prev = state_prev(k,:)';
         for i = 1:n
-            if abs(x_prev(i)) >= abs(state_constr(i));
-                x_prev(i) = 0.98*sign(x_prev(i))*abs(state_constr(i));
+            if x_prev(i) >= state_constr(i,2)
+                x_prev(i) = state_constr(i,2)-0.01*(state_constr(i,2)-state_const(i,1));
+            elseif x_prev(i) < state_constr(i,1)
+                x_prev(i) = state_constr(i,1)+0.01*(state_constr(i,2)-state_const(i,1));
             end
         end
+        
         x0(1+(k-1)*n:k*n) = x_prev;
         
         u_prev = ctrl_prev(k,:)';
