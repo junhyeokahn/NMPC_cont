@@ -3,7 +3,7 @@ function [NMPC_Prob,L_e,L_e_full,s_t] = ...
                f,B,df,state_con,u_con,...
                N,Tp,delta,dt,...
                P,alpha,RPI_bound,...
-               x_eq,obs,Name)
+               x_eq,obs,R,Name)
 
 %% Constants
 
@@ -19,7 +19,7 @@ u_U = u_con(:,2);
 Q = diag(zeros(n,1));
 
 %Control cost weighting
-R = eye(m);
+% R = eye(m);
 
 %Number of collocation points
 K = N;

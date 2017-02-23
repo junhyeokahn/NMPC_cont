@@ -24,7 +24,7 @@ lambda =  2.5;
 ctrl_bound = 5.91;
 n_W = 1; %states that W is a function of
 
-%% Dynamics
+%% Dynamics & Cost
 
 mass = 1;
 l = 1;
@@ -67,6 +67,7 @@ B_w_true = [0,(1/I_true), 0, 0;
 % B_true = B;
 % B_w_true = B_w;
 
+Q = zeros(n); R = eye(m);
    
 %% Bounds
 

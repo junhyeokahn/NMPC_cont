@@ -3,7 +3,7 @@ function [MP_Prob,L_e_full,s_t] = ...
                f,B,df,state_con,u_con,...
                N,Tp,dt,...
                P,alpha,RPI_bound,...
-               x_eq,obs,Name)
+               x_eq,obs,Q,R,Name)
 
 %% Constants
 
@@ -17,10 +17,10 @@ u_U = u_con(:,2);
 
 %State cost weighting
 % Q = 0*diag([0;0;1;1;1;4]);
-Q = diag(zeros(n,1));
+% Q = diag(zeros(n,1));
 
 %Control cost weighting
-R = eye(m);
+% R = eye(m);
 
 %Number of collocation points
 K = N;

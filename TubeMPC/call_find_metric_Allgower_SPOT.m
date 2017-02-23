@@ -89,10 +89,10 @@ ccm_eps = 0;
 %% Pick a solution
 
 lambda = 1.742857142857143; 
-condn = 1.6344;
-return_metric = 1;
-
-[sos_prob, w_lower, w_upper] = find_metric_Allgower_SPOT(x1_lim, x2_lim,condn, lambda, ccm_eps,return_metric);
+% condn = 1.6344;
+% return_metric = 1;
+% 
+% [sos_prob, w_lower, w_upper] = find_metric_Allgower_SPOT(x1_lim, x2_lim,condn, lambda, ccm_eps,return_metric);
 
 %% Compute control bounds using optimal metric (W = const matrix)
 load('metric_Allgower.mat');

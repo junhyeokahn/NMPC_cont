@@ -41,7 +41,7 @@ lambda =  0.8283;
 ctrl_bound = 6.00;
 n_W = [3,4];
 
-%% Dynamics
+%% Dynamics & Cost
 
 mass = 0.486;
 J = 0.00383;
@@ -71,6 +71,8 @@ B_w = [zeros(1,3),1,0,0;
 f_true = f;
 B_true = B;
 B_w_true = B_w;
+
+Q = zeros(n); R = eye(m);
    
 %% Bounds
 

@@ -37,7 +37,7 @@ N_mpc = 14;
     f,B,df, state_constr ,ctrl_constr,...
     N_mp,Tp,dt,...
     P,alpha,(0.98*d_bar)^2,...
-    x_eq,obs,'MP');
+    x_eq,obs,Q,R,'MP');
 
 load MP_WARM_PVTOL.mat;
 % mp_warm = struct('Tp',Tp,'shift',0,'sol',0,...
@@ -92,7 +92,7 @@ geodesic_MPC.warm.result = geo_result_MPC;
     f,B,df, state_constr,ctrl_constr,...
     N_mpc,T_mpc,delta,dt,...
     P,alpha,d_bar^2,...
-    x_eq,obs_mpc,'MPC');
+    x_eq,obs_mpc,R,'MPC');
 
 load MPC_WARM_PVTOL.mat;
 
@@ -125,9 +125,6 @@ disp(ctrl_opt);
 
 
 %% Set up non-linear sim
-disp('Ready to Simulate');
-keyboard;
-
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
 t_end = 20;
@@ -161,12 +158,14 @@ geo_energy = zeros(T_steps,2);
 geo_energy(:,2) = NaN;
 
 x_act(1,:) = test_state';
-state_0 = test_state;
+state = test_state;
 state_0_MPC = MP_state(1,:)';
 
 i_mpc = 0;
       
 %% Simulate
+disp('Ready to Simulate');
+keyboard;
 
 track_traj = 0; %follow initial MP instead of MPC resolves
 
@@ -179,7 +178,7 @@ if (~track_traj)
             fprintf('%d/%d:',i,T_steps);
             
             [~, ~,J_opt,~,~,geo_Prob] = compute_geodesic_tom(geo_Prob,...
-                n,geodesic_N,state_0_MPC,state_0,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
+                n,geodesic_N,state_0_MPC,state,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
             geo_energy(i,1) = J_opt;
             
             if (i>1)
@@ -189,7 +188,7 @@ if (~track_traj)
             end
             tic
             [MPC_x,MPC_u,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
-                compute_NMPC(MPC_Prob,state_0,state_constr,ctrl_constr,MP_state,MP_ctrl,...
+                compute_NMPC(MPC_Prob,state,state_constr,ctrl_constr,MP_state,MP_ctrl,...
                 n,m,N_mpc,L_e_mpc,mpc_warm,dt,E_bnd);
             ctrl_solve_time(i,1) = toc;
             
@@ -208,7 +207,7 @@ if (~track_traj)
             u_nom = MPC_ctrl{i_mpc}(1:round(dt_sim/dt)+1,:);
             
             [~, ~,J_opt,~,geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,n,geodesic_N,...
-                x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
+                x_nom',state,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
             
             geo_energy(i,2) = J_opt;
             geo_warm.result = geo_result;
@@ -224,7 +223,7 @@ if (~track_traj)
         %Optimal Control
         tic
         [X, X_dot,J_opt,opt_solved(i,2),geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,...
-            n,geodesic_N,x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
+            n,geodesic_N,x_nom',state,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
         ctrl_solve_time(i,2) = toc;
         
         Geod{i} = X';
@@ -244,10 +243,10 @@ if (~track_traj)
                             -sin(x_act(i,3))]';
         
         [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,[solve_t(i):dt:solve_t(i+1)]',u_nom,Aux_ctrl(i,:),...
-            f_true,B_true,B_w_true,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state_0,ode_options);
+            f_true,B_true,B_w_true,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);
         
-        state_0 = d_state(end,:)';
-        x_act(i+1,:) = state_0';
+        state = d_state(end,:)';
+        x_act(i+1,:) = state';
     end
 else
     for i = 1:T_steps
@@ -258,7 +257,7 @@ else
         %Optimal Control
         tic
         [X, X_dot,J_opt,opt_solved(i,2),geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,...
-            n,geodesic_N,x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
+            n,geodesic_N,x_nom',state,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
         ctrl_solve_time(i,2) = toc;
         
         Geod{i} = X';
@@ -279,10 +278,10 @@ else
                             -sin(x_act(i,3))]';
         
         [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,[solve_t(i):dt:solve_t(i+1)]',u_nom,Aux_ctrl(i,:),...
-            f_true,B_true,B_w_true,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state_0,ode_options);
+            f_true,B_true,B_w_true,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);
         
-        state_0 = d_state(end,:)';
-        x_act(i+1,:) = state_0';
+        state = d_state(end,:)';
+        x_act(i+1,:) = state';
     end
 end
 
@@ -292,9 +291,6 @@ close all;
 plot_PVTOL;
 
 %% Evaluate cost
-
-%Control cost weighting
-R = eye(m);
 
 J_cost = zeros((t_end/dt)+1,1);
 for i = 1:(t_end/dt)+1
