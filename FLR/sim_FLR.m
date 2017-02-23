@@ -15,7 +15,7 @@ global geodesic_MPC;
 [geo_Prob,geo_Ke,T_e,T_dot_e,geo_Aeq] = ...
         setup_geodesic_calc(n,geodesic_N,W_fnc,dW_fnc,n_W);
     
-geo_solver = 'snopt';    
+geo_solver = 'npsol';    
     
 geo_warm = struct('sol',0,'result',[]);    
 
@@ -116,7 +116,7 @@ geo_energy = zeros(T_steps,2);
 geo_energy(:,2) = NaN;
 
 x_act(1,:) = test_state';
-state_0 = test_state;
+state = test_state;
 
 %% Simulate
 disp('Ready to Simulate');
@@ -132,7 +132,7 @@ for i = 1:T_steps
     %Optimal Control
     tic
     [X, X_dot,J_opt,opt_solved(i,2),geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,...
-        n,geodesic_N,x_nom',state_0,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
+        n,geodesic_N,x_nom',state,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
     ctrl_solve_time(i,2) = toc;
     
     Geod{i} = X';
@@ -147,25 +147,25 @@ for i = 1:T_steps
         ctrl_solve_time(i,3) = toc;
     else
         xi_nom = phi(x_nom');
-        xi_act = phi(state_0);
+        xi_act = phi(state);
         
         v_aux = -K_FL*(xi_act - xi_nom);
-        u_net = (1/B_tilde)*(v_aux + (f_tilde(x_nom) + B_tilde*u_nom(1,:)') - (f_tilde(state_0)));
+        u_net = (1/B_tilde)*(v_aux + (f_tilde(x_nom) + B_tilde*u_nom(1,:)') - (f_tilde(state)));
         Aux_ctrl(i,:) = u_net' - u_nom(1,:);
     end
     
     True_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = u_nom+kron(ones((dt_sim/dt)+1,1),Aux_ctrl(i,:));
     
     %Disturbance model
-    dist_dir = (X_dot(:,geo_Ke+1))'*(W_mat(state_0)\eye(n))*B_w;
+    dist_dir = (X_dot(:,geo_Ke+1))'*(W_fnc.W_eval(W_fnc.w_poly_fnc(state))\eye(n))*B_w;
     w_dist(i,:) = w_max*(dist_dir/norm(dist_dir));
     w_dist(i,:) = -(w_max/sqrt(2))*[1,1];
     
     [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,[solve_t(i):dt:solve_t(i+1)]',u_nom,Aux_ctrl(i,:),...
-        f,B,B_w,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state_0,ode_options);
+        f,B,B_w,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);
     
-    state_0 = d_state(end,:)';
-    x_act(i+1,:) = state_0';
+    state = d_state(end,:)';
+    x_act(i+1,:) = state';
 end
 
 %% Plots
@@ -194,7 +194,7 @@ disp('NOMINAL MP COST:'); disp(trapz([0:dt:t_end],J_nom_mp));
 figure()
 plot([0:dt:t_end],cumtrapz([0:dt:t_end],J_nom_mp),'r-','linewidth',2);
 grid on
-xlabel('Time [s]'); grid on;
+xlabel('Time [s]'); ylabel('Nominal accumulated cost'); grid on;
 hold on
 
 %% Movie sim

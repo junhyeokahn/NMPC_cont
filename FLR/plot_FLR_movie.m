@@ -43,7 +43,7 @@ set(gca,'Ylim',yl);
 grid on;
 
 axis manual;
-pause;
+keyboard;
 
 for i = t_step:t_step:length(t)
     

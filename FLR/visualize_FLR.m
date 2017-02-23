@@ -3,7 +3,7 @@ subplot(2,1,1)
 hold on
 
 %RCI set
-for i = 1:round(delta/dt):length(MP_state)
+for i = 1:round(0.05*Tp/dt):length(MP_state)
     Ellipse_plot(M_ccm_ang,MP_state(i,[1,3])',25,'k');
 end
 %Terminal set
@@ -22,7 +22,7 @@ subplot(2,1,2)
 hold on
 
 %RCI set
-for i = 1:round(delta/dt):length(MP_state)
+for i = 1:round(0.05*Tp/dt):length(MP_state)
     Ellipse_plot(M_ccm_omg,MP_state(i,[2,4])',25,'k');
 end
 %Terminal set

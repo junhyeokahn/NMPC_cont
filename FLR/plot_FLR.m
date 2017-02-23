@@ -14,7 +14,7 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 %Control Trajectory
 figure()
 hold on
-plot(0:dt:t_end,Nom_ctrl,'b-','linewidth',2);
+plot(0:dt:t_end,MP_ctrl,'b-','linewidth',2);
 plot(0:dt:t_end,True_ctrl,'r-','linewidth',2);
 xlabel('Time [s]');
 ylabel('u(t)'); 
