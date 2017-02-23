@@ -1,6 +1,4 @@
 % function plot_quad_movie(t,x_act,MPC_state,M_ccm_pos,x_eq,obs,t_step)
-close all;
-clc;
 
 t_step = (0.06/dt_sim);
 

@@ -23,7 +23,7 @@ geo_warm = struct('sol',0,'result',[]);
 
 T_mpc = 1.5;
 delta = 0.1;
-dt = 0.02;
+dt = 0.005;
 
 N_mpc = 50;
 dt_sim = dt;
@@ -35,20 +35,20 @@ dt_sim = dt;
     P,alpha,(d_bar)^2,...
     x_eq,obs,Q,R,'MPC');
 
-% load MPC_WARM_TMPC.mat;
-mpc_warm = struct('Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
-                  's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
+load MPC_WARM_TMPC.mat;
+% mpc_warm = struct('Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
+%                   's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
 
 %% Test MPC Solve
       
 tic
-[MPC_state,MPC_ctrl,converged_MPC,mpc_warm] = compute_MP(MPC_Prob,...
+[MP_state,MP_ctrl,converged_MPC,mpc_warm] = compute_MP(MPC_Prob,...
     test_state,test_state,state_constr,ctrl_constr,x_eq,u_eq,...
-    n,m,N_mp,L_e_mpc,mpc_warm);
+    n,m,N_mpc,L_e_mpc,mpc_warm);
 toc
 disp('MPC:'); disp(converged_MPC);
 
-MPC_Prob.CHECK = 1;
+MPC_Prob = ProbCheck(MPC_Prob,'snopt');
 mpc_warm.sol = 1;
 save('MPC_WARM_TMPC.mat','mpc_warm');
 
@@ -61,7 +61,7 @@ visualize_TMPC;
 tic
 [X, X_dot,J_opt,converged_geo,geo_result,geo_Prob] = ...
     compute_geodesic_tom(geo_Prob,n,geodesic_N,...
-            MPC_state(1,:)',test_state,...
+            MP_state(1,:)',test_state,...
             T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
 toc;
 disp('Geo dist: ');disp(converged_geo);
@@ -73,7 +73,7 @@ geo_warm.result = geo_result;
 tic
 [~, ~,J_opt,converged_geo,geo_result_MPC,geo_Prob_MPC] = ...
     compute_geodesic_tom(geodesic_MPC.geo_Prob,n,geodesic_N,...
-            MPC_state(1,:)',test_state,...
+            MP_state(1,:)',test_state,...
             T_e,T_dot_e,geo_Aeq,geodesic_MPC.warm,'npsol');
 toc;
 disp('MPC Geo dist: '); disp(converged_geo);
@@ -87,7 +87,7 @@ geodesic_MPC.warm.result = geo_result_MPC;
 
 tic
 [ctrl_opt,converged_aux] = compute_opt_aux(geo_Ke,X,X_dot,J_opt,...
-                            W_fnc,f,B,MPC_ctrl(1,:)',lambda);
+                            W_fnc,f,B,MP_ctrl(1,:)',lambda);
 toc;
 disp('opt_control:');disp(converged_aux);
 disp(ctrl_opt);
@@ -97,7 +97,7 @@ disp(ctrl_opt);
 
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
-t_end = 5*T_mpc;
+t_end = T_mpc;
 solve_t = (0:dt_sim:t_end)';
 T_steps = length(solve_t)-1;
 
@@ -128,7 +128,7 @@ geo_energy(:,2) = NaN;
 
 x_act(1,:) = test_state';
 state = test_state;
-state_0_MPC = MPC_state(1,:)';
+state_0_MPC = MP_state(1,:)';
 
 i_mpc = 0;
       
@@ -146,14 +146,9 @@ for i = 1:T_steps
         [~, ~,J_opt,~,~,geo_Prob] = compute_geodesic_tom(geo_Prob,...
             n,geodesic_N,state_0_MPC,state,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
         geo_energy(i,1) = J_opt;
-        
-        if (i>1)
-            E_bnd = J_opt;
-        else
-            E_bnd = (d_bar)^2;
-        end
+
         tic
-        [MPC_x,MPC_u,opt_solved(i,1),mpc_warm,MPC_Prob] = compute_MP(MPC_Prob,test_state,state_0_MPC,state_constr,ctrl_constr,x_eq,u_eq,...
+        [MPC_x,MPC_u,opt_solved(i,1),mpc_warm] = compute_MP(MPC_Prob,state,state_0_MPC,state_constr,ctrl_constr,x_eq,u_eq,...
                                                         n,m,N_mpc,L_e_mpc,mpc_warm);
         ctrl_solve_time(i,1) = toc;
         
@@ -207,7 +202,7 @@ for i = 1:T_steps
     w_dist(i,:) = w_max;
     
     [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,[solve_t(i):dt:solve_t(i+1)]',u_nom,Aux_ctrl(i,:),...
-        f_true,B_true,B_w_true,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);
+        f,B,B_w,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);
     
     state = d_state(end,:)';
     x_act(i+1,:) = state';
@@ -216,28 +211,7 @@ end
 
 %% Plots
 
+close all;
 plot_TMPC;
 
-%% Evaluate cost
 
-%Control cost weighting
-R = eye(m);
-
-J_cost = zeros((t_end/dt)+1,1);
-for i = 1:(t_end/dt)+1
-    J_cost(i) = True_ctrl(i,:)*R*True_ctrl(i,:)';
-end
-
-disp('NET COST:'); disp(trapz([0:dt:t_end],J_cost));
-
-J_nom_mpc = zeros((t_end/dt)+1,1);
-for i = 1:(t_end/dt)+1
-    J_nom_mpc(i) = Nom_ctrl(i,:)*R*Nom_ctrl(i,:)';
-end
-disp('NOMINAL MPC COST:'); disp(trapz([0:dt:t_end],J_nom_mpc));
-
-figure()
-plot([0:dt:t_end],cumtrapz([0:dt:t_end],J_nom_mpc),'b-','linewidth',2);
-grid on
-xlabel('Time [s]'); ylabel('Accumulated Cost'); 
-grid on;

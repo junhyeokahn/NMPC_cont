@@ -23,7 +23,7 @@ P = [7.9997, -12.2019;
 
 Tp = 1.5;
 delta = 0.1;
-dt = 0.02;
+dt = 0.005;
 
 [NMPC_Prob, NMPC_Aeq,L_e,L_e_full] = setup_NMPC(n,m,P,f,...
                     B,df,N_mpc,alpha,Tp,delta,dt);

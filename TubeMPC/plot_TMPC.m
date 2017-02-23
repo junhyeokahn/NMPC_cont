@@ -1,12 +1,28 @@
 %% Plot
 
+%2D State Plot
+% P_inv = diag([39.0251,486.0402]);
+figure()
+for i_mpc = 1:T_steps_MPC
+    plot(MPC_state{i_mpc}(1:round(delta/dt)+1,1),...
+         MPC_state{i_mpc}(1:round(delta/dt)+1,2),'r-','linewidth',2);
+      hold on;
+    Ellipse_plot(M_ccm*(1/d_bar^2),MPC_state{i_mpc}(1,1:2),25,'k');
+end
+plot(x_act(:,1),x_act(:,2),'b-','linewidth',2);    
+
+Ellipse_plot((1/alpha)*P,x_eq,25,'r');
+xlabel('x_1'); ylabel('x_2');
+set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+grid on; 
+
 % State Trajectory
 figure()
 hold on
 plot(solve_t, x_act,'linewidth',2);
 grid on
 xlabel('Time [s]'); ylabel('States'); 
-h_leg = legend('$x_1$','x_2');
+h_leg = legend('$x_1$','$x_2$');
 set(h_leg,'interpreter','latex');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 

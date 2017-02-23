@@ -127,7 +127,7 @@ disp(ctrl_opt);
 %% Set up non-linear sim
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
-t_end = 20;
+t_end = 10;
 solve_t = (0:dt_sim:t_end)';
 T_steps = length(solve_t)-1;
 

@@ -19,7 +19,7 @@ W_fnc = struct('W_eval',W_eval,'w_poly_fnc',w_poly);
 dW_fnc = @(x) {};
 
 sigma_ThBw = 15.6182;
-lambda =  15.6182;
+lambda =  1.7429;
 ctrl_bound = 1.908;
 n_W = []; %states that W is a function of
 
@@ -52,9 +52,9 @@ P = [7.9997, -12.2019;
 
 state_constr_low = -[5;5]+euc_bound;
 state_constr = [state_constr_low, -state_constr_low];
-ctrl_constr = [-2,2];
+ctrl_constr = [-2+ctrl_bound,2-ctrl_bound];
 
 x_eq = [0;0];
 u_eq = 0;
-test_state = [3.5;-2.5];
+test_state = [3.4;-2.4];
 
