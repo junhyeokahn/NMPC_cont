@@ -9,22 +9,10 @@ N = 10;
 %Number of collocation points
 K = N;
 
-%Final time
-dt = 0.01;
-delta = 1.2;
-Tp = delta;
-
 %CGL nodes
 [s_t,w] = clencurt(K); %t_t: [-1, 1] : <-> : [0, Tp]
 s = fliplr(s_t); %t: [1, -1]
 
-%% Final solution interpolation matrix
-
-tau = 0:dt:delta;
-s_e = (2*tau - Tp)/Tp; %[-1, s_delta]
-
-%Lagrange polynomial evaluation at the interpolation points
-L_e = compute_Lagrange(length(s_e)-1,N,s_e,s_t);
 
 %% Get Differentiation matrix
 
@@ -72,6 +60,23 @@ Result = snoptTL(Prob);
 
 converged = Result.Inform; %GOOD: {1,2,3}
 
+%% Interpret solution
+
+%Final time
+Tp = Result.x_k(end);
+
+%evaluate solution at grid tau
+delta = Tp;
+dt = 0.01;
+tau = 0:dt:Tp;
+s_e = (2*tau - Tp)/Tp; %[-1, s_delta]
+
+%CGL time points
+tau_CGL = (Tp*s_t+Tp)/2;
+
+%Lagrange polynomial evaluation at the interpolation points
+L_e = compute_Lagrange(length(s_e)-1,N,s_e,s_t);
+
 %Compute trajectories
 NMPC_state = zeros(size(L_e,2),n);
 x_nom = zeros(N+1,n);
@@ -85,9 +90,25 @@ end
 NMPC_ctrl = zeros(size(L_e,2),m);
 u_nom = zeros(N+1,m);
 for j = 1:m
-    c = Result.x_k(n*(N+1)+j:m:end-(m-j))';
+    c = Result.x_k(n*(N+1)+j:m:end-1-(m-j))';
     NMPC_ctrl(:,j) = (c*L_e)';
     u_nom(:,j) = c';
 end
 
 %% Plot
+
+figure()
+plot(tau',NMPC_state,'linewidth',2);
+hold on
+plot(tau_CGL,x_nom,'rs','markersize',10);
+grid on
+xlabel('time [s]');
+legend('x','y');
+
+figure()
+plot(tau',NMPC_ctrl,'linewidth',2);
+hold on
+plot(tau_CGL,u_nom,'rs','markersize',10);
+grid on
+xlabel('time [s]');
+ylabel('\theta');
