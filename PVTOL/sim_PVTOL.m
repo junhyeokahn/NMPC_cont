@@ -40,8 +40,8 @@ N_mpc = 14;
     x_eq,obs,Q,R,'MP');
 
 load MP_WARM_PVTOL.mat;
-% mp_warm = struct('Tp',Tp,'shift',0,'sol',0,...
-%                   's_t',MP_st,'state',[],'ctrl',[],'result',[]);
+%mp_warm = struct('Tp',Tp,'shift',0,'sol',0,...
+%                  's_t',MP_st,'state',[],'ctrl',[],'result',[]);
 
 %% Test MP Solve
       
@@ -52,8 +52,11 @@ tic
 toc
 disp('MP:'); disp(converged_MP);
 
-mp_warm.sol = 1;
-save('MP_WARM_PVTOL.mat','mp_warm');
+if (converged_MP >= 1 && converged_MP <= 3)
+    %store successful solution
+    mp_warm.sol = 1.0;
+    save('MP_WARM_PVTOL.mat','mp_warm');
+end
 
 %% Visualize
 
@@ -94,10 +97,10 @@ geodesic_MPC.warm.result = geo_result_MPC;
     P,alpha,d_bar^2,...
     x_eq,obs_mpc,R,'MPC');
 
-load MPC_WARM_PVTOL.mat;
+% load MPC_WARM_PVTOL.mat;
 
-% mpc_warm = struct('Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
-%                   's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
+mpc_warm = struct('Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
+                  's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
 
 %% Test MPC solve
 tic
@@ -177,6 +180,7 @@ if (~track_traj)
             
             fprintf('%d/%d:',i,T_steps);
             
+            %Get current dist off nominal
             [~, ~,J_opt,~,~,geo_Prob] = compute_geodesic_tom(geo_Prob,...
                 n,geodesic_N,state_0_MPC,state,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
             geo_energy(i,1) = J_opt;
@@ -186,6 +190,8 @@ if (~track_traj)
             else
                 E_bnd = (d_bar)^2;
             end
+            
+            %Now solve MPC problem given current tube bound
             tic
             [MPC_x,MPC_u,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
                 compute_NMPC(MPC_Prob,state,state_constr,ctrl_constr,MP_state,MP_ctrl,...
@@ -194,25 +200,29 @@ if (~track_traj)
             
             fprintf('%d, %.2f \n', opt_solved(i,1),ctrl_solve_time(i,1));
             
+            %adjust MPC solution for next iteration
             mpc_warm.solve_t = solve_t(i);
             mpc_warm.shift = delta;
             mpc_warm.sol = 1;
             
             i_mpc = i_mpc + 1;
             
+            %record solution
             MPC_state{i_mpc} = MPC_x;
             MPC_ctrl{i_mpc} = MPC_u;
             
+            %extract current nominal
             x_nom = MPC_state{i_mpc}(1,:);
             u_nom = MPC_ctrl{i_mpc}(1:round(dt_sim/dt)+1,:);
             
+            %recompute distance from (new) nominal state
             [~, ~,J_opt,~,geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,n,geodesic_N,...
                 x_nom',state,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
             
             geo_energy(i,2) = J_opt;
             geo_warm.result = geo_result;
             
-            %update starting state for next MPC problem
+            %update starting state guess for next MPC problem
             state_0_MPC = MPC_state{i_mpc}(round(delta/dt)+1,:)';
         else
             i_mpc_use = round((mod(solve_t(i),delta))/dt)+1;

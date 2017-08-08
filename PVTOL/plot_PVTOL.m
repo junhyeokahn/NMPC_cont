@@ -7,7 +7,7 @@ hold on
 plot(MP_state(:,1),MP_state(:,2),'g--','linewidth',1);
 if (~track_traj)
     for i_mpc = 1:T_steps_MPC
-        %MPC reference trajectory exectued segement
+        %MPC reference trajectory executed segement
         plot(MPC_state{i_mpc}(1:round(delta/dt)+1,1),MPC_state{i_mpc}(1:round(delta/dt)+1,2),'r--','linewidth',1.5);
         
         if i_mpc<T_steps_MPC
@@ -38,9 +38,17 @@ else
         Ellipse_plot(M_ccm_pos_unscaled*(1/d_i^2),MP_state(1+(i-1)*(dt_sim/dt),1:2),30,'k');
     end
 end
+
+%Plot actual trajectory
 plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
 plot(x_act(1:round(delta/dt_sim):end,1),x_act(1:round(delta/dt_sim):end,2),'ko','markersize',7,'markerfacecolor','k');
 
+%Plot obstacles
+for i_ob = 1:obs.n_obs
+    Ellipse_plot(eye(2)*(1/(obs.r(i_ob)+len)^2),obs.pos(:,i_ob), 25,'r',1);
+end
+
+%Final condition
 Ellipse_plot(P(1:2,1:2)*(1/(alpha)), x_eq(1:2),30,'k');
 xlabel('$X$','interpreter','latex'); 
 ylabel('$Z$','interpreter','latex');

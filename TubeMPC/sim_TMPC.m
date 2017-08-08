@@ -25,7 +25,7 @@ T_mpc = 1.5;
 delta = 0.1;
 dt = 0.005;
 
-N_mpc = 50;
+N_mpc = 24;
 dt_sim = dt;
 
 % Setup MPC problem (using MP setup rather than NMPC)
@@ -35,9 +35,9 @@ dt_sim = dt;
     P,alpha,(d_bar)^2,...
     x_eq,obs,Q,R,'MPC');
 
-load MPC_WARM_TMPC.mat;
-% mpc_warm = struct('Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
-%                   's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
+%load MPC_WARM_TMPC.mat;
+ mpc_warm = struct('Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
+                   's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
 
 %% Test MPC Solve
       
@@ -97,7 +97,7 @@ disp(ctrl_opt);
 
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
-t_end = T_mpc;
+t_end = 2*T_mpc;
 solve_t = (0:dt_sim:t_end)';
 T_steps = length(solve_t)-1;
 
