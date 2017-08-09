@@ -108,11 +108,11 @@ end
 % Plot the ellipse
 %----------------------------------------
 if strcmp(Type,'2D'),
-    plot(X(1,:),X(2,:),c);
+%     plot(X(1,:),X(2,:),c);
     hold on;
-    plot(C(1),C(2),'b*');
+%     plot(C(1),C(2),'b*');
     axis equal, grid
-    patch(X(1,:)',X(2,:)',c,'facealpha',f_al);
+    patch(X(1,:)',X(2,:)',c,'facealpha',f_al,'Edgecolor','none');
 else
     mesh(XX,YY,ZZ); colormap('winter');
     axis equal

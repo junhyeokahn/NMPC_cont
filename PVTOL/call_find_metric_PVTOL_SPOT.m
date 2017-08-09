@@ -1,5 +1,5 @@
 clear all; close all; clc;
-yalmip('clear');
+% yalmip('clear');
 
 warning('off','MATLAB:lang:badlyScopedReturnValue');
 
@@ -7,7 +7,7 @@ warning('off','MATLAB:lang:badlyScopedReturnValue');
 
 n = 6;
 g = 9.81;
-ccm_eps = 0.01;
+ccm_eps = 0.05;
 
 %Dynamics constants
 
@@ -21,13 +21,13 @@ vz_lim = 1.0;
 
 % lambda_range = linspace(0.7,0.95,5);
 % lambda_range = (1/100)*round(lambda_range*100);
-% lambda_range = 0.81;
+% lambda_range = 0.83;
 % euc_bounds = NaN(length(lambda_range),1);
 % d_bars = NaN(length(lambda_range),1);
 % cond_bound = NaN(length(lambda_range),1);
 % 
 % eps = 1;
-% condn_prev = 70;
+% condn_prev = 50;
 % return_metric = 0;
 % 
 % for ll = 1:length(lambda_range)
@@ -42,7 +42,7 @@ vz_lim = 1.0;
 %     cond_u = 1.2*condn_prev;
 %     while (~solved) 
 %         fprintf(' cond_u: %.2f: ', cond_u);
-%         [sos_prob,~,~] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+%         [sos_prob,~,~] = find_metric_PVTOL_SPOT_alt(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
 %                                 cond_u,lambda,ccm_eps,return_metric);
 %         if (sos_prob == 0)
 %             solved = 1;
@@ -66,7 +66,7 @@ vz_lim = 1.0;
 %         condn = (cond_l+cond_u)/2;
 %         fprintf(' cond: %.2f', condn);
 %         
-%         [sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+%         [sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT_alt(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
 %                                 condn,lambda,ccm_eps,return_metric);
 %         
 %         if (sos_prob == 0)
@@ -93,13 +93,14 @@ vz_lim = 1.0;
 
 %% Pick a solution
 
-lambda = 0.83; 
-condn = 132.8;
+lambda = 0.8283; 
+% condn = 320;
+condn = 132;
 % lambda = 0.81;
 % condn = 128.55;
 return_metric = 1;
 
-[sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+[sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT_alt(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
                                 condn,lambda,ccm_eps,return_metric);
 
 %% Compute aux control bound

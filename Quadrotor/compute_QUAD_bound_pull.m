@@ -49,7 +49,7 @@ box_lim = [r_lim^2-r^2;
            th_lim_high - th];
        
 l_order = 2;
-l_def_states = [r;p;th; dnin]';
+l_def_states = [r;p;th;dnin]';
 
 [prog, Ll_rp] = prog.newSOSPoly(monomials(l_def_states,0:l_order+2),2);       
 [prog, Ll_th] = prog.newSOSPoly(monomials(l_def_states,0:l_order),2);       
@@ -57,7 +57,7 @@ Ll = [Ll_rp; Ll_th];
 
 %Bounds
 prog = prog.withPSD(M_lower_pull - m_lower*eye(9));
-prog = prog.withSOS(dnin'*(M - M_lower_pull)*dnin - Ll'*box_lim);
+prog = prog.withSOS(dnin'*(M - M_lower_pull)*dnin - (Ll'*box_lim));
 
 options = spot_sdp_default_options();
 options.verbose = 1;
