@@ -93,12 +93,10 @@ for i = 1:obs.n_obs
 end
 obs.M_obs = M_obs;
 
-M_obs_mpc = zeros(2,2,obs_mpc.n_obs);
-for i = 1:obs_mpc.n_obs
-    S_new = (sqrt(S_pos\eye(2)) + (obs_mpc.r(i)+len)*eye(2))^2\eye(2);
-    M_obs_mpc(:,:,i) = U_pos*S_new*V_pos';
-end
-obs_mpc.M_obs = M_obs_mpc;
+%Setup unscaled ellipsoid for MPC problem
+[U_u,S_u,V_u] = svd(M_ccm_pos_unscaled);
+obs_mpc.U = U_u; obs_mpc.V = V_u; obs_mpc.S = S_u;
+obs_mpc.r = obs_rad_mpc + len;
 
 %final state constraint
 P = 2.5*eye(n);

@@ -1,10 +1,10 @@
-function conJ = NMPC_conJ(xu,Prob,n,N,P,D,df,~,Tp,obs)
+function conJ = NMPC_conJ(xu,Prob,n,N,P,D,df,~,Tp)
 %Dynamics, and terminal
 % n = Prob.user.n;
 % N = Prob.user.N;
 % m = Prob.user.m;
 
-% no = Prob.user.obs.n_obs;
+obs = Prob.user.obs;
 no = obs.n_obs;
 
 global US_A;
@@ -34,10 +34,10 @@ NMPC_CONJ(n*(N+1)+2,n*N+1:n*(N+1)) = 2*(P*(xu(n*N+1:n*(N+1))-Prob.user.x_eq))';
 
 % cJ_obs = zeros(no*(N+1),(n+m)*(N+1));
 
-for i = 1:no
-    o_pos = obs.pos(:,i);
-    Mo = obs.M_obs(:,:,i);
-    for k = 1:N+1
+for k = 1:N+1
+    for i = 1:no
+        o_pos = obs.pos(:,i);
+        Mo = obs.M{k}(:,:,i);
         x_k = xu(1+(k-1)*n:2+(k-1)*n);
         NMPC_CONJ(n*(N+1)+2+(i-1)*(N+1)+k,1+(k-1)*n:2+(k-1)*n) = -2*(o_pos-x_k)'*Mo;
     end

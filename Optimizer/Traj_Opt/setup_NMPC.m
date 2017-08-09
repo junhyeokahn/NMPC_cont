@@ -76,8 +76,8 @@ MPC_cost = @(xu) (Tp/2)*(xu-xu_eq)'*F*(xu-xu_eq);% + Obs_cost(xu,n,N,obs) ;
 MPC_grad = @(xu) Tp*F*(xu-xu_eq);% + Obs_grad(xu,n,m,N,obs);
 MPC_hess = @(xu) Tp*F;
 
-MPC_con = @(xu,Prob) NMPC_con(xu,Prob,n,N,P,D,f,B_full,Tp,obs);
-MPC_conJ = @(xu,Prob) NMPC_conJ(xu,Prob,n,N,P,D,df,B_full,Tp,obs);
+MPC_con = @(xu,Prob) NMPC_con(xu,Prob,n,N,P,D,f,B_full,Tp);
+MPC_conJ = @(xu,Prob) NMPC_conJ(xu,Prob,n,N,P,D,df,B_full,Tp);
 
 c_L = [zeros(n*(N+1)+2,1); ones(obs.n_obs*(N+1),1)];
 c_U = [zeros(n*(N+1),1);RPI_bound;alpha;Inf*ones(obs.n_obs*(N+1),1)];
@@ -99,7 +99,15 @@ NMPC_Prob = conAssign(MPC_cost,MPC_grad,MPC_hess,[],...
         
 NMPC_Prob.SOL.optPar(10) = 1e-4;
 NMPC_Prob.SOL.optPar(12) = 1e-4;
-        
+
+%% Create MPC obstacle structure
+obs.M = cell(N+1,1);
+for k = 1:N+1
+    obs.M{k} = zeros(2,2,obs.n_obs);
+end
+ 
+%% Declare user variables
+
 NMPC_Prob.user.x_act = zeros(n,1);
 NMPC_Prob.user.D = D;
 NMPC_Prob.user.n = n;

@@ -17,9 +17,9 @@ if (~warm.sol) %don't have guess for first MPC iteration
         x_prev = state_prev(k,:)';
         for i = 1:n
             if x_prev(i) >= state_constr(i,2)
-                x_prev(i) = state_constr(i,2)-0.01*(state_constr(i,2)-state_const(i,1));
+                x_prev(i) = state_constr(i,2)-0.01*(state_constr(i,2)-state_constr(i,1));
             elseif x_prev(i) < state_constr(i,1)
-                x_prev(i) = state_constr(i,1)+0.01*(state_constr(i,2)-state_const(i,1));
+                x_prev(i) = state_constr(i,1)+0.01*(state_constr(i,2)-state_constr(i,1));
             end
         end
         
@@ -52,6 +52,18 @@ Prob.user.x_act = act_p;
 Prob.user.x_eq = x_term;
 
 Prob = modify_c_U(Prob,E_s,n*(N+1)+1);
+
+%Update scaled obstacles
+obs_mpc = Prob.user.obs;
+tau = (1/2)*(warm.Tp*warm.s_t+warm.Tp);
+E_time_bound = (sqrt(E_s)*exp(-warm.lambda*tau) + warm.d_bar*(1-exp(-warm.lambda*tau))).^2;
+for k = 1:N+1
+    for i = 1:obs_mpc.n_obs
+        S_new = (sqrt(E_time_bound(k)*(obs_mpc.S\eye(2))) + (obs_mpc.r(i))*eye(2))^2\eye(2);
+        obs_mpc.M{k}(:,:,i) = obs_mpc.U*S_new*obs_mpc.V';
+    end
+end
+Prob.user.obs = obs_mpc;
 
 %Recall warm solution
 if (warm.sol)

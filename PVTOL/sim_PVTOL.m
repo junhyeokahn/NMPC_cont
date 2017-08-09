@@ -23,7 +23,7 @@ geo_warm = struct('sol',0,'result',[]);
 %% Setup MP numerics
 
 % PVTOL:
-Tp = 28;
+Tp = 19;
 dt = 0.001;
 N_mp = 120;
 
@@ -99,7 +99,8 @@ geodesic_MPC.warm.result = geo_result_MPC;
 
 % load MPC_WARM_PVTOL.mat;
 
-mpc_warm = struct('Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
+mpc_warm = struct('lambda',lambda,'d_bar',d_bar,...
+                  'Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
                   's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
 
 %% Test MPC solve
@@ -130,7 +131,7 @@ disp(ctrl_opt);
 %% Set up non-linear sim
 ode_options = odeset('RelTol', 1e-6, 'AbsTol', 1e-9);
 
-t_end = 10;
+t_end = Tp;
 solve_t = (0:dt_sim:t_end)';
 T_steps = length(solve_t)-1;
 

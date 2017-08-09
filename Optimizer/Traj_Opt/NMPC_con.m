@@ -1,6 +1,8 @@
 % function c = NMPC_con(xu,Prob)
-function c = NMPC_con(xu,Prob,n,N,P,D,f,B_full,Tp,obs)
+function c = NMPC_con(xu,Prob,n,N,P,D,f,B_full,Tp)
 %Dynamics, and terminal
+
+obs = Prob.user.obs;
 
 no = obs.n_obs;
 global geodesic_MPC;
@@ -37,10 +39,10 @@ c(n*(N+1)+2) = (xu(n*N+1:n*(N+1))-Prob.user.x_eq)'*P*(xu(n*N+1:n*(N+1))-Prob.use
 %% Obstacle constraints
 
 % c_obs = zeros(no*(N+1),1);
-for i = 1:no
-    o_pos = obs.pos(:,i);
-    Mo = obs.M_obs(:,:,i);
-    for k = 1:N+1
+for k = 1:N+1
+    for i = 1:no
+        o_pos = obs.pos(:,i);
+        Mo = obs.M{k}(:,:,i);
         x_k = xu(1+(k-1)*n:2+(k-1)*n);
         c(n*(N+1)+2+(i-1)*(N+1)+k,1) = (o_pos-x_k)'*Mo*(o_pos-x_k);
     end
