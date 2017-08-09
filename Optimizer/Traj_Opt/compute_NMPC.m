@@ -2,7 +2,7 @@ function [NMPC_state,NMPC_ctrl,converged,warm,Prob] = ...
     compute_NMPC(Prob,act_p,state_constr,ctrl_constr,MP_state,MP_ctrl,...
     n,m,N,L_e,warm,dt,E_s)
 
-%Solution guess
+%% Solution guess
 if (~warm.sol) %don't have guess for first MPC iteration
     
     x_term = MP_state((warm.Tp/dt)+1,:)';
@@ -36,7 +36,7 @@ if (~warm.sol) %don't have guess for first MPC iteration
         u0(1+(k-1)*m:k*m) = u_prev;
     end
     
-    Prob = modify_x_0(Prob,[x0;u0]);
+    Prob = modify_x_0(Prob,[x0;u0;warm.Tp]);
     
 else
     %find location of terminal state for current MPC step
@@ -47,13 +47,14 @@ else
     x_term = MP_state(i_end,:)';
 end
 
-%Update constraint information
+%% Update constraint information
 Prob.user.x_act = act_p;
 Prob.user.x_eq = x_term;
 
 Prob = modify_c_U(Prob,E_s,n*(N+1)+1);
+Prob = modify_x_L(Prob,min(warm.solve_t + warm.shift + warm.Tp,Prob.user.t_nom(end)),(n+m)*(N+1)+1);
 
-%Update scaled obstacles
+%% Update scaled obstacles
 obs_mpc = Prob.user.obs;
 tau = (1/2)*(warm.Tp*warm.s_t+warm.Tp);
 E_time_bound = (sqrt(E_s)*exp(-warm.lambda*tau) + warm.d_bar*(1-exp(-warm.lambda*tau))).^2;
@@ -65,7 +66,7 @@ for k = 1:N+1
 end
 Prob.user.obs = obs_mpc;
 
-%Recall warm solution
+%% Recall warm solution
 if (warm.sol)
       Prob = WarmDefSOL('snopt',Prob,warm.result);
 end
@@ -74,11 +75,12 @@ if ~Prob.CHECK
     Prob = ProbCheck(Prob,'snopt');
 end
 
+%% Solve
 Result = snoptTL(Prob);
 
 converged = Result.Inform; %GOOD: {1,2,3}
 
-%Compute trajectories
+%% Compute trajectories
 NMPC_state = zeros(size(L_e,2),n);
 x_nom = zeros(N+1,n);
 for i = 1:n
@@ -91,7 +93,7 @@ end
 NMPC_ctrl = zeros(size(L_e,2),m);
 u_nom = zeros(N+1,m);
 for j = 1:m
-    c = Result.x_k(n*(N+1)+j:m:end-(m-j))';
+    c = Result.x_k(n*(N+1)+j:m:end-1-(m-j))';
     NMPC_ctrl(:,j) = (c*L_e)';
     u_nom(:,j) = c';
 end

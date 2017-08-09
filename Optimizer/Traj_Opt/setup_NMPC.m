@@ -1,5 +1,5 @@
 function [NMPC_Prob,L_e,L_e_full,s_t] = ...
-    setup_NMPC(n,m,...
+    setup_NMPC(MP_x,MP_u,MP_t,n,m,...
                f,B,df,state_con,u_con,...
                N,Tp,delta,dt,...
                P,alpha,RPI_bound,...
@@ -47,7 +47,7 @@ D = sparse(kron(D,eye(n)));
 %State node values: [x_t0,...,x_tN]
 %Control node values: [u_t0,...,u_tN]
 
-% n_vars = (N+1)*(n+m);
+% n_vars = (N+1)*(n+m) + 1;
 
 %% Define problem
 
@@ -68,25 +68,27 @@ F = sparse(blkdiag(Q_tilde,R_bar));
 B_full = sparse(kron(eye(N+1),B));
 
 xu_L = [kron(ones(N+1,1),x_L);
-        kron(ones(N+1,1),u_L)];
+        kron(ones(N+1,1),u_L);
+        0];
 xu_U = [kron(ones(N+1,1),x_U);
-        kron(ones(N+1,1),u_U)]; 
+        kron(ones(N+1,1),u_U);
+        MP_t(end)]; 
        
-MPC_cost = @(xu) (Tp/2)*(xu-xu_eq)'*F*(xu-xu_eq);% + Obs_cost(xu,n,N,obs) ;
-MPC_grad = @(xu) Tp*F*(xu-xu_eq);% + Obs_grad(xu,n,m,N,obs);
-MPC_hess = @(xu) Tp*F;
+MPC_cost = @(xu) (Tp/2)*(xu(1:end-1)-xu_eq)'*F*(xu(1:end-1)-xu_eq)-xu(end);
+MPC_grad = @(xu) [Tp*F*(xu(1:end-1)-xu_eq);-1];
+MPC_hess = @(xu) blkdiag(Tp*F,0);
 
-MPC_con = @(xu,Prob) NMPC_con(xu,Prob,n,N,P,D,f,B_full,Tp);
-MPC_conJ = @(xu,Prob) NMPC_conJ(xu,Prob,n,N,P,D,df,B_full,Tp);
+MPC_con = @(xu,Prob) NMPC_con(xu,Prob,n,N,P,D,f,B,B_full,Tp);
+MPC_conJ = @(xu,Prob) NMPC_conJ(xu,Prob,n,N,P,D,f,df,B,B_full,Tp);
 
 c_L = [zeros(n*(N+1)+2,1); ones(obs.n_obs*(N+1),1)];
 c_U = [zeros(n*(N+1),1);RPI_bound;alpha;Inf*ones(obs.n_obs*(N+1),1)];
 
-xu0 = zeros((n+m)*(N+1),1);
+xu0 = [zeros((n+m)*(N+1),1);1];
 
 global NMPC_CONJ;
-NMPC_CONJ = zeros(n*(N+1)+2+obs.n_obs*(N+1),(n+m)*(N+1));
-NMPC_CONJ(1:n*(N+1),n*(N+1)+1:end) = -B_full;
+NMPC_CONJ = zeros(n*(N+1)+2+obs.n_obs*(N+1),(n+m)*(N+1)+1);
+NMPC_CONJ(1:n*(N+1),n*(N+1)+1:end-1) = -B_full;
 
 % Name = 'NMPC';
 NMPC_Prob = conAssign(MPC_cost,MPC_grad,MPC_hess,[],...
@@ -118,7 +120,9 @@ NMPC_Prob.user.df = df;
 NMPC_Prob.user.B_full = B_full;
 NMPC_Prob.user.Tp = Tp;
 NMPC_Prob.user.P = P;
-NMPC_Prob.user.x_eq = x_eq;
 NMPC_Prob.user.obs = obs;
+NMPC_Prob.user.x_nom = MP_x;
+NMPC_Prob.user.u_nom = MP_u;
+NMPC_Prob.user.t_nom = MP_t;
 
 end

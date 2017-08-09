@@ -1,5 +1,5 @@
 % function c = NMPC_con(xu,Prob)
-function c = NMPC_con(xu,Prob,n,N,P,D,f,B_full,Tp)
+function c = NMPC_con(xu,Prob,n,N,P,D,f,B,B_full,Tp)
 %Dynamics, and terminal
 
 obs = Prob.user.obs;
@@ -18,7 +18,7 @@ c = zeros(n*(N+1)+2+no*(N+1),1);
 %% Dynamics constraints
 
 c(1:n*(N+1)) = (2/Tp)*D*xu(1:n*(N+1)) -...
-    (NMPC_dyn(f,xu(1:n*(N+1)),n,N) + B_full*xu(n*(N+1)+1:end));
+    (NMPC_dyn(f,xu(1:n*(N+1)),n,N) + B_full*xu(n*(N+1)+1:end-1));
 
 %% Initial RPI constraint
 
@@ -33,8 +33,11 @@ c(n*(N+1)+1) = J_opt;
 % NMPC_GEOD(GEOD_ITER,1) = J_opt;
 % GEOD_ITER = GEOD_ITER +1;
 
-%% Terminal constraint
-c(n*(N+1)+2) = (xu(n*N+1:n*(N+1))-Prob.user.x_eq)'*P*(xu(n*N+1:n*(N+1))-Prob.user.x_eq);
+%% Terminal constraints
+t_star = xu(end);
+x_eq = interp1(Prob.user.t_nom,Prob.user.x_nom,t_star);
+
+c(n*(N+1)+2) = (xu(n*N+1:n*(N+1))-x_eq')'*P*(xu(n*N+1:n*(N+1))-x_eq');
 
 %% Obstacle constraints
 

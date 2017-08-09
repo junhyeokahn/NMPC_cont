@@ -2,7 +2,7 @@ function [MP_state,MP_ctrl,converged,warm] = ...
     compute_MP(Prob,act_p,mpc_state,state_constr,ctrl_constr,x_eq,u_eq,...
                  n,m,N,L_e,warm)
 
-%adjust initial nominal state guess
+%% adjust initial nominal state guess
 for i = 1:n
     if mpc_state(i) > state_constr(i,2)
         mpc_state(i) = state_constr(i,2)-0.01*(state_constr(i,2)-state_const(i,1));
@@ -30,21 +30,22 @@ elseif (warm.sol==0.5) %have some guess of homotopy
     Prob = modify_x_0(Prob,warm.result.x_k);
 end
 
-%Update constraint information
+%% Update constraint information
 Prob.user.x_act = act_p;
 
-%Recall warm solution
+%% Recall warm solution
 if (warm.sol==1) %have actual full solution
     Prob = WarmDefSOL('snopt',Prob,warm.result);
 end
 
 Prob = ProbCheck(Prob,'snopt');
 
+%% Solve
 Result = snoptTL(Prob);
 
 converged = Result.Inform; %GOOD: {1,2,3}
 
-%Compute trajectories
+%% Compute trajectories
 MP_state = zeros(size(L_e,2),n);
 x_nom = zeros(N+1,n);
 for i = 1:n
