@@ -16,7 +16,7 @@ u_L = u_con(:,1);
 u_U = u_con(:,2);
 
 %State cost weighting
-Q = diag(zeros(n,1));
+Q = 0.5*diag([1;1;0;0;0;0]);
 
 %Number of collocation points
 K = N;
@@ -46,6 +46,7 @@ D = sparse(kron(D,eye(n)));
 
 %State node values: [x_t0,...,x_tN]
 %Control node values: [u_t0,...,u_tN]
+%Rejoin MP time: T_end
 
 % n_vars = (N+1)*(n+m) + 1;
 
@@ -53,7 +54,7 @@ D = sparse(kron(D,eye(n)));
 
 % u_eq = zeros(m,1);
 
-x_eq_all = kron(ones(N+1,1),zeros(n,1));
+x_eq_all = kron(ones(N+1,1),x_eq);
 u_eq_all = kron(ones(N+1,1),zeros(m,1));
 
 xu_eq = [x_eq_all;u_eq_all];

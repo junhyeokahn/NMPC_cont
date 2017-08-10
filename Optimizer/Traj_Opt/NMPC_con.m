@@ -33,11 +33,12 @@ c(n*(N+1)+1) = J_opt;
 % NMPC_GEOD(GEOD_ITER,1) = J_opt;
 % GEOD_ITER = GEOD_ITER +1;
 
-%% Terminal constraints
-t_star = xu(end);
-x_eq = interp1(Prob.user.t_nom,Prob.user.x_nom,t_star);
+%% Terminal constraint
 
-c(n*(N+1)+2) = (xu(n*N+1:n*(N+1))-x_eq')'*P*(xu(n*N+1:n*(N+1))-x_eq');
+t_star = xu(end);
+x_term = interp1(Prob.user.t_nom,Prob.user.x_nom,t_star);
+
+c(n*(N+1)+2) = (xu(n*N+1:n*(N+1))-x_term')'*P*(xu(n*N+1:n*(N+1))-x_term');
 
 %% Obstacle constraints
 

@@ -121,6 +121,7 @@ xlabel('Time [s]');
 title('Convergence');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
  
+%Geod distances
 figure()
 plot(solve_t(1:end-1),sqrt(geo_energy(:,1)),'b-','linewidth',2);
 hold on
@@ -141,5 +142,16 @@ grid on
 legend('d(x^{*},x)','RCI bound');
 xlabel('Time [s]');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+
+%MPC final time
+figure()
+plot(MPC_time(:,1),MPC_time(:,2),'ro','markersize',10,'markerfacecolor','r');
+hold on
+plot(MPC_time(:,1),min([MPC_time(:,1)+T_mpc,Tp*ones(T_steps_MPC,1)],[],2),'bo','markersize',10,'markerfacecolor','b');
+grid on
+xlabel('Time [s]');ylabel('t_i + T');
+legend('Optimal re-join time','Minimum re-join time');
+set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+
 
 save('quad_sim.mat');

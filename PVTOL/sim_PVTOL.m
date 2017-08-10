@@ -27,10 +27,10 @@ Tp = 19;
 dt = 0.001;
 N_mp = 120;
 
-T_mpc = 3;
+T_mpc = 4;
 dt_sim = 0.002;
 delta = 1;
-N_mpc = 14;
+N_mpc = 18;
 
 % Setup motion planning problem
 [MP_Prob,L_e_mp,MP_st] = setup_MP(n,m,...
@@ -106,7 +106,7 @@ mpc_warm = struct('lambda',lambda,'d_bar',d_bar,...
 
 %% Test MPC solve
 tic
-[MPC_state,~,converged_MPC,mpc_warm,MPC_Prob] = compute_NMPC(MPC_Prob,...
+[MPC_state,~,~,converged_MPC,mpc_warm,MPC_Prob] = compute_NMPC(MPC_Prob,...
     test_state,state_constr,ctrl_constr,MP_state,MP_ctrl,...
     n,m,N_mpc,L_e_mpc,mpc_warm,dt,(d_bar)^2);
 toc
@@ -140,28 +140,39 @@ dt_MPC = delta;
 solve_MPC = (0:dt_MPC:t_end)';
 T_steps_MPC = length(solve_MPC)-1;
 
+%Store MPC solution
 MPC_state = cell(T_steps_MPC,1);
 MPC_ctrl = cell(T_steps_MPC,1);
 
-accel_nom = zeros(T_steps,2);
+%Store disturbance
 w_dist = zeros(T_steps,2);
 
+%Store actual state
 x_act = zeros(T_steps+1,n);
 
+%Store geodesics
 Geod = cell(T_steps,1);
 
+%Store control history
 Aux_ctrl = zeros(T_steps,m);
 True_ctrl = zeros((t_end/dt)+1,m);
 Nom_ctrl = zeros((t_end/dt)+1,m);
 
+%Computation times
 ctrl_solve_time = zeros(T_steps,3);
 ctrl_solve_time(:,1) = NaN;
 
+%Solve success
 opt_solved = NaN(T_steps,3);
 
+%Geodesic distances
 geo_energy = zeros(T_steps,2);
 geo_energy(:,2) = NaN;
 
+%MPC final time
+MPC_time = zeros(T_steps_MPC,2);
+
+%Initialize
 x_act(1,:) = test_state';
 state = test_state;
 state_0_MPC = MP_state(1,:)';
@@ -195,7 +206,7 @@ if (~track_traj)
             
             %Now solve MPC problem given current tube bound
             tic
-            [MPC_x,MPC_u,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
+            [MPC_x,MPC_u,mpc_Tp,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
                 compute_NMPC(MPC_Prob,state,state_constr,ctrl_constr,MP_state,MP_ctrl,...
                 n,m,N_mpc,L_e_mpc,mpc_warm,dt,E_bnd);
             ctrl_solve_time(i,1) = toc;
@@ -212,6 +223,8 @@ if (~track_traj)
             %record solution
             MPC_state{i_mpc} = MPC_x;
             MPC_ctrl{i_mpc} = MPC_u;
+            MPC_time(i_mpc,1) = solve_t(i);
+            MPC_time(i_mpc,2) = mpc_Tp;
             
             %extract current nominal
             x_nom = MPC_state{i_mpc}(1,:);

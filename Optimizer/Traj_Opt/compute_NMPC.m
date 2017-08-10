@@ -1,4 +1,4 @@
-function [NMPC_state,NMPC_ctrl,converged,warm,Prob] = ...
+function [NMPC_state,NMPC_ctrl,T_end,converged,warm,Prob] = ...
     compute_NMPC(Prob,act_p,state_constr,ctrl_constr,MP_state,MP_ctrl,...
     n,m,N,L_e,warm,dt,E_s)
 
@@ -38,18 +38,10 @@ if (~warm.sol) %don't have guess for first MPC iteration
     
     Prob = modify_x_0(Prob,[x0;u0;warm.Tp]);
     
-else
-    %find location of terminal state for current MPC step
-    i_end =  round((warm.solve_t + warm.shift + warm.Tp)/dt) + 1;
-    if (i_end > length(MP_state))
-        i_end = length(MP_state);
-    end
-    x_term = MP_state(i_end,:)';
 end
 
 %% Update constraint information
 Prob.user.x_act = act_p;
-Prob.user.x_eq = x_term;
 
 Prob = modify_c_U(Prob,E_s,n*(N+1)+1);
 Prob = modify_x_L(Prob,min(warm.solve_t + warm.shift + warm.Tp,Prob.user.t_nom(end)),(n+m)*(N+1)+1);
@@ -97,6 +89,8 @@ for j = 1:m
     NMPC_ctrl(:,j) = (c*L_e)';
     u_nom(:,j) = c';
 end
+
+T_end = Result.x_k(end);
 
 warm.result = Result;
 warm.state = x_nom;
