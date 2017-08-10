@@ -22,8 +22,8 @@ obs_loc_mpc = [[0.7;-3],...
            [1.0;1.7],...
            [2.5;3.8]];
               
-obs_rad = [1,0.9,0.8,1.2,1,0.9,0.5,0.6];
-obs_rad_mpc = [0.9,0.8,1.2,0.9,0.5];
+obs_rad = [1,0.9,0.8,0.65,1,0.9,0.5,0.6];
+obs_rad_mpc = [0.9,0.8,0.65,0.9,0.5];
 
 % obs_loc = [];
 % obs_loc_mpc = [];
@@ -67,7 +67,7 @@ f_true = f;
 B_true = B;
 B_w_true = B_w;
 
-Q = zeros(n); R = eye(m); Q_T = diag([1;1;0;0;0;0]);
+Q = zeros(n); R = eye(m); Q_T = diag([2;2;0;0;0;0]);
    
 %% Bounds
 

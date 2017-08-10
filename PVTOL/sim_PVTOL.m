@@ -27,10 +27,10 @@ Tp = 19;
 dt = 0.001;
 N_mp = 120;
 
-T_mpc = 4;
+T_mpc = 8;
 dt_sim = 0.002;
-delta = 1;
-N_mpc = 18;
+delta = 2;
+N_mpc = 36;
 
 % Setup motion planning problem
 [MP_Prob,L_e_mp,MP_st] = setup_MP(n,m,...
@@ -138,7 +138,11 @@ T_steps = length(solve_t)-1;
 
 dt_MPC = delta;
 solve_MPC = (0:dt_MPC:t_end)';
-T_steps_MPC = length(solve_MPC)-1;
+if solve_MPC(end)==t_end
+    T_steps_MPC = length(solve_MPC)-1;
+else
+    T_steps_MPC = length(solve_MPC);
+end
 
 %Store MPC solution
 MPC_state = cell(T_steps_MPC,1);
