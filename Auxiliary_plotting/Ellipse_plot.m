@@ -112,7 +112,7 @@ if strcmp(Type,'2D'),
     hold on;
 %     plot(C(1),C(2),'b*');
     axis equal, grid
-    patch(X(1,:)',X(2,:)',c,'facealpha',f_al,'Edgecolor','none');
+    patch(X(1,:)',X(2,:)',c,'facealpha',f_al);
 else
     mesh(XX,YY,ZZ); colormap('winter');
     axis equal
