@@ -1,9 +1,9 @@
 % function plot_quad_movie(t,x_act,MPC_state,M_ccm_pos,x_eq,obs,t_step)
 
-t_step = (0.06/dt_sim);
+t_step = 10;
 
 [U_pos,S_pos,V_pos] = svd(M_ccm_pos);
-S_new = (sqrt(S_pos\eye(2)) + 0*eye(2))^2\eye(2);
+S_new = (sqrt(S_pos\eye(2)) + len*eye(2))^2\eye(2);
 
 M_ccm_pos_infl = U_pos*S_new*V_pos';
 %% Setup geometry
@@ -26,23 +26,36 @@ J = size(quad_bound,2);
 %% Plot paths
 
 figure();
-%actual
-% plot(x_act(:,1),x_act(:,2),'r-','linewidth',2);
+
+%Initial Motion plan
 plot(MP_state(:,1),MP_state(:,2),'r-','linewidth',2);
 hold on;
+
+%Maximal RCI tube on MP
+for i = 1:0.5/dt:length(MP_state)
+    Ellipse_plot(M_ccm_pos_infl,MP_state(i,1:2)',25,'r',0.05);
+end
+
 %obstacles
 for i = 1:obs.n_obs
     Ellipse_plot(eye(2)*(1/(obs.r(i))^2),obs.pos(:,i),25,'k',1);
 end
-% for i = 1:length(MPC_state) %each cell is new MPC segment
-%     plot(MPC_state{i}(1:round(delta/dt_sim),1),MPC_state{i}(1:round(delta/dt_sim),2),'b-','linewidth',2); %resolve after delta
-%     for j = 1:(delta/dt_sim):round(delta/dt_sim)+1
-%         Ellipse_plot(M_ccm_pos_infl,MPC_state{i}(j,1:2)',25,'b',0.05);
-%     end
-% end
-for i = 1:0.5/dt:length(MP_state)
-    Ellipse_plot(M_ccm_pos_infl,MP_state(i,1:2)',25,'b',0.05);
+
+%MPC
+h_mpc = plot(MPC_state{1}(:,1),MPC_state{1}(:,2),'b-','linewidth',2);
+t_vec = 0:0.5:T_mpc;
+E_start = geo_energy(1,2);
+E_bnd = (sqrt(E_start)*exp(-lambda*t_vec) + d_bar*(1-exp(-lambda*t_vec))).^2;
+
+%Online RCI tube on MPC traj
+S_new = (sqrt(E_bnd(1)*(obs_mpc.S\eye(2))) + len*eye(2))^2\eye(2);
+h_rci = Ellipse_plot(obs_mpc.U*S_new*obs_mpc.V',MPC_state{1}(1,1:2)',25,'b',0.05);
+h_rci = repmat(h_rci,length(t_vec),1);
+for j = 2:length(t_vec)
+    S_new = (sqrt(E_bnd(j)*(obs_mpc.S\eye(2))) + len*eye(2))^2\eye(2);
+    h_rci(j) = Ellipse_plot(obs_mpc.U*S_new*obs_mpc.V',MPC_state{1}(1+(j-1)*(0.5/dt),1:2)',25,'b',0.05);
 end
+
 % Ellipse_plot(M_ccm_pos,x_eq(1:2),25,'r');
 line([-5 -5],[-5, 5],'color','k','linewidth',2);
 line([-5  5],[ 5, 5],'color','k','linewidth',2);
@@ -68,12 +81,6 @@ end_patch = [5,4,4,5;
              5,5,4,4];
 patch(end_patch(1,:),end_patch(2,:),'r','FaceAlpha',0.5,'linewidth',2); 
 
-% xl = get(gca,'Xlim');
-% yl = get(gca,'Ylim');
-% xl = 1.1*xl;
-% yl = 1.1*yl;
-% set(gca,'Xlim',xl);
-% set(gca,'Ylim',yl);
 xlim(1.1*[-5,5]); ylim(1.1*[-5,5]);
 
 % grid on;
@@ -81,6 +88,7 @@ grid off
 
 axis manual;
 keyboard;
+i_mpc =  1;
 for i = t_step:t_step:length(solve_t)
     
     quad_p = quad_bound;
@@ -97,7 +105,19 @@ for i = t_step:t_step:length(solve_t)
     title(sprintf('t = %.2f',solve_t(i)));
     drawnow;
     pause(0.001);
-       
+    
+    if (floor(solve_t(i)/delta)+1 > i_mpc)
+        i_mpc = i_mpc + 1;
+        set(h_mpc,'XData',MPC_state{i_mpc}(:,1),'YData',MPC_state{i_mpc}(:,2));
+        E_start = geo_energy(1+(i_mpc-1)*(delta/dt_sim),2);
+        E_bnd = (sqrt(E_start)*exp(-lambda*t_vec) + d_bar*(1-exp(-lambda*t_vec))).^2;
+        for j = 1:length(t_vec)
+            delete(h_rci(j));
+            S_new = (sqrt(E_bnd(j)*(obs_mpc.S\eye(2))) + len*eye(2))^2\eye(2);
+            h_rci(j) = Ellipse_plot(obs_mpc.U*S_new*obs_mpc.V',MPC_state{i_mpc}(1+(j-1)*(0.5/dt),1:2)',25,'b',0.05);
+        end
+%         pause(0.25);
+    end       
     
 end
 % end

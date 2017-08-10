@@ -1,4 +1,4 @@
-function Ellipse_plot(A, C, varargin)
+function h =  Ellipse_plot(A, C, varargin)
 %
 %  Ellipse_Plot(A,C,N) plots a 2D ellipse or a 3D ellipsoid 
 %  represented in the "center" form:  
@@ -107,14 +107,14 @@ end
 
 % Plot the ellipse
 %----------------------------------------
-if strcmp(Type,'2D'),
+if strcmp(Type,'2D')
 %     plot(X(1,:),X(2,:),c);
     hold on;
 %     plot(C(1),C(2),'b*');
     axis equal, grid
-    patch(X(1,:)',X(2,:)',c,'facealpha',f_al);
+    h = patch(X(1,:)',X(2,:)',c,'facealpha',f_al);
 else
-    mesh(XX,YY,ZZ); colormap('winter');
+    h = mesh(XX,YY,ZZ); colormap('winter');
     axis equal
     hidden off
 end
