@@ -16,7 +16,8 @@ u_L = u_con(:,1);
 u_U = u_con(:,2);
 
 %State cost weighting
-Q = 0.5*diag([1;1;0;0;0;0]);
+Q_T = 0.5*diag([1;1;0;0;0;0]);
+Q = zeros(n);
 
 %Number of collocation points
 K = N;
@@ -60,8 +61,8 @@ u_eq_all = kron(ones(N+1,1),zeros(m,1));
 xu_eq = [x_eq_all;u_eq_all];
 
 Q_bar = kron(diag(w),Q); R_bar = kron(diag(w),R);
-% Q_tilde = Q_bar + kron(diag([zeros(N,1);(2/Tp)]),P);
-Q_tilde = Q_bar;
+Q_tilde = Q_bar + kron(diag([zeros(N,1);(2/Tp)]),Q_T);
+% Q_tilde = Q_bar;
 
 F = sparse(blkdiag(Q_tilde,R_bar));
 % F_pattern = sparse(F~=0);
