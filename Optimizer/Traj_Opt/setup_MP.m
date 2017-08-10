@@ -3,7 +3,7 @@ function [MP_Prob,L_e_full,s_t] = ...
                f,B,df,state_con,u_con,...
                N,Tp,dt,...
                P,alpha,RPI_bound,...
-               x_eq,obs,Q,R,Name)
+               x_eq,obs,R,Name)
 
 %% Constants
 
@@ -14,6 +14,9 @@ x_U = state_con(:,2);
 %Control bounds
 u_L = u_con(:,1);
 u_U = u_con(:,2);
+
+%State cost
+Q = zeros(n);
 
 %Number of collocation points
 K = N;

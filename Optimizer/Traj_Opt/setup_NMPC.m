@@ -3,7 +3,7 @@ function [NMPC_Prob,L_e,L_e_full,s_t] = ...
                f,B,df,state_con,u_con,...
                N,Tp,delta,dt,...
                P,alpha,RPI_bound,...
-               x_eq,obs,R,Name)
+               x_eq,obs,Q,Q_T,R,Name)
 
 %% Constants
 
@@ -14,10 +14,6 @@ x_U = state_con(:,2);
 %Control bounds
 u_L = u_con(:,1);
 u_U = u_con(:,2);
-
-%State cost weighting
-Q_T = 0.5*diag([1;1;0;0;0;0]);
-Q = zeros(n);
 
 %Number of collocation points
 K = N;

@@ -67,7 +67,7 @@ f_true = f;
 B_true = B;
 B_w_true = B_w;
 
-Q = zeros(n); R = eye(m);
+Q = zeros(n); R = eye(m); Q_T = diag([1;1;0;0;0;0]);
    
 %% Bounds
 
