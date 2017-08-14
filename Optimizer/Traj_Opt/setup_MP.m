@@ -3,7 +3,7 @@ function [MP_Prob,L_e_full,s_t] = ...
                f,B,df,state_con,u_con,...
                N,Tp,dt,...
                P,alpha,RPI_bound,...
-               x_eq,obs,R,Name)
+               Q,x_eq,R,u_eq,obs,Name)
 
 %% Constants
 
@@ -14,9 +14,6 @@ x_U = state_con(:,2);
 %Control bounds
 u_L = u_con(:,1);
 u_U = u_con(:,2);
-
-%State cost
-Q = zeros(n);
 
 %Number of collocation points
 K = N;
@@ -50,8 +47,8 @@ D = kron(D,eye(n));
 
 % u_eq = zeros(m,1);
 
-x_eq_all = kron(ones(N+1,1),zeros(n,1));
-u_eq_all = kron(ones(N+1,1),zeros(m,1));
+x_eq_all = kron(ones(N+1,1),x_eq);
+u_eq_all = kron(ones(N+1,1),u_eq);
 
 xu_eq = [x_eq_all;u_eq_all];
 
@@ -68,12 +65,12 @@ xu_L = [kron(ones(N+1,1),x_L);
 xu_U = [kron(ones(N+1,1),x_U);
         kron(ones(N+1,1),u_U)]; 
        
-MPC_cost = @(xu) (Tp/2)*(xu-xu_eq)'*F*(xu-xu_eq);% + Obs_cost(xu,n,N,obs) ;
-MPC_grad = @(xu) Tp*F*(xu-xu_eq);% + Obs_grad(xu,n,m,N,obs);
+MPC_cost = @(xu) (Tp/2)*(xu-xu_eq)'*F*(xu-xu_eq);
+MPC_grad = @(xu) Tp*F*(xu-xu_eq);
 MPC_hess = @(xu) Tp*F;
 
-% MP_con_fnc = @(xu,Prob) MP_con(xu,Prob,n,geo_MPC.geo_Prob,N,P,D,f,B_full,Tp,obs);
-
+%constraints:
+%dynamics, initial RPI constraint, terminal set constraint, obstacles
 c_L = [zeros(n*(N+1)+2,1); ones(obs.n_obs*(N+1),1)];
 c_U = [zeros(n*(N+1),1);RPI_bound;alpha;Inf*ones(obs.n_obs*(N+1),1)];
 

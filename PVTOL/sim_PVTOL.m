@@ -27,17 +27,17 @@ Tp = 19;
 dt = 0.001;
 N_mp = 120;
 
-T_mpc = 8;
+T_mpc = 3;
 dt_sim = 0.002;
-delta = 2;
-N_mpc = 36;
+delta = 1;
+N_mpc = 12;
 
 % Setup motion planning problem
 [MP_Prob,L_e_mp,MP_st] = setup_MP(n,m,...
     f,B,df, state_constr ,ctrl_constr,...
     N_mp,Tp,dt,...
     P,alpha,(0.98*d_bar)^2,...
-    x_eq,obs,R,'MP');
+    zeros(n),x_eq,R,u_eq,obs,'MP');
 
 load MP_WARM_PVTOL.mat;
 %mp_warm = struct('Tp',Tp,'shift',0,'sol',0,...
@@ -96,19 +96,19 @@ geodesic_MPC.warm.result = geo_result_MPC;
     f,B,df, state_constr,ctrl_constr,...
     N_mpc,T_mpc,delta,dt,...
     P,alpha,d_bar^2,...
-    x_eq,obs_mpc,Q,Q_T,R,'MPC');
+    Q,Q_T,x_eq,R,u_eq,obs_mpc,'MPC');
 
 % load MPC_WARM_PVTOL.mat;
 
 mpc_warm = struct('lambda',lambda,'d_bar',d_bar,...
-                  'Tp',T_mpc,'shift',0,'sol',0,'solve_t',0,...
+                  'Tp',T_mpc,'shift',delta,'sol',0,'solve_t',0,...
                   's_t',MPC_st,'state',[],'ctrl',[],'result',[]);
 
 %% Test MPC solve
 tic
 [MPC_state,~,~,converged_MPC,mpc_warm,MPC_Prob] = compute_NMPC(MPC_Prob,...
     test_state,state_constr,ctrl_constr,MP_state,MP_ctrl,...
-    n,m,N_mpc,L_e_mpc,mpc_warm,dt,(d_bar)^2);
+    n,m,N_mpc,L_e_mpc,mpc_warm,dt,delta,(d_bar)^2);
 toc
 disp('MPC:');disp(converged_MPC);
 
@@ -117,7 +117,7 @@ mpc_warm.sol = 1;
 save('MPC_WARM_PVTOL.mat','mpc_warm');
 
 figure(1)
-plot(MPC_state(:,1),MPC_state(:,2),'r-','linewidth',2);
+h_mpc = plot(MPC_state(:,1),MPC_state(:,2),'r-','linewidth',2);
                 
 %% Setup Auxiliary controller
 
@@ -209,17 +209,14 @@ if (~track_traj)
             end
             
             %Now solve MPC problem given current tube bound
+            mpc_warm.solve_t = solve_t(i);
             tic
-            [MPC_x,MPC_u,mpc_Tp,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
+            [MPC_x,MPC_u,mpc_T_rejoin,opt_solved(i,1),mpc_warm,MPC_Prob] = ...
                 compute_NMPC(MPC_Prob,state,state_constr,ctrl_constr,MP_state,MP_ctrl,...
-                n,m,N_mpc,L_e_mpc,mpc_warm,dt,E_bnd);
+                n,m,N_mpc,L_e_mpc,mpc_warm,dt,delta,E_bnd);
             ctrl_solve_time(i,1) = toc;
             
             fprintf('%d, %.2f \n', opt_solved(i,1),ctrl_solve_time(i,1));
-            
-            %adjust MPC solution for next iteration
-            mpc_warm.solve_t = solve_t(i);
-            mpc_warm.shift = delta;
             mpc_warm.sol = 1;
             
             i_mpc = i_mpc + 1;
@@ -228,7 +225,7 @@ if (~track_traj)
             MPC_state{i_mpc} = MPC_x;
             MPC_ctrl{i_mpc} = MPC_u;
             MPC_time(i_mpc,1) = solve_t(i);
-            MPC_time(i_mpc,2) = mpc_Tp;
+            MPC_time(i_mpc,2) = mpc_T_rejoin;
             
             %extract current nominal
             x_nom = MPC_state{i_mpc}(1,:);
@@ -351,4 +348,4 @@ plot([0:dt:t_end],cumtrapz([0:dt:t_end],J_nom_mpc),'b-','linewidth',2);
 
 %% 
 
-plot_PVTOL_movie;
+% plot_PVTOL_movie;

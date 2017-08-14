@@ -147,7 +147,7 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 figure()
 plot(MPC_time(:,1),MPC_time(:,2),'ro','markersize',10,'markerfacecolor','r');
 hold on
-plot(MPC_time(:,1),min([MPC_time(:,1)+T_mpc,Tp*ones(T_steps_MPC,1)],[],2),'bo','markersize',10,'markerfacecolor','b');
+plot(MPC_time(:,1),min([MPC_time(:,1)+delta,Tp*ones(T_steps_MPC,1)],[],2),'bo','markersize',10,'markerfacecolor','b');
 grid on
 xlabel('Time [s]');ylabel('t_i + T');
 legend('Optimal re-join time','Minimum re-join time');

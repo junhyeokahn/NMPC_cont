@@ -1,11 +1,9 @@
-function [NMPC_state,NMPC_ctrl,T_end,converged,warm,Prob] = ...
+function [NMPC_state,NMPC_ctrl,T_rejoin,converged,warm,Prob] = ...
     compute_NMPC(Prob,act_p,state_constr,ctrl_constr,MP_state,MP_ctrl,...
-    n,m,N,L_e,warm,dt,E_s)
+    n,m,N,L_e,warm,dt,delta,E_s)
 
 %% Solution guess
 if (~warm.sol) %don't have guess for first MPC iteration
-    
-    x_term = MP_state((warm.Tp/dt)+1,:)';
     
     tau = (1/2)*(warm.Tp*warm.s_t+warm.Tp) ;
     state_prev = interp1([0:dt:warm.Tp]',MP_state(1:(warm.Tp/dt)+1,:),tau);
@@ -44,7 +42,7 @@ end
 Prob.user.x_act = act_p;
 
 Prob = modify_c_U(Prob,E_s,n*(N+1)+1);
-Prob = modify_x_L(Prob,min(warm.solve_t + warm.shift + warm.Tp,Prob.user.t_nom(end)),(n+m)*(N+1)+1);
+Prob = modify_x_L(Prob,min(warm.solve_t + delta,Prob.user.t_nom(end)),(n+m)*(N+1)+1);
 
 %% Update scaled obstacles
 obs_mpc = Prob.user.obs;
@@ -90,11 +88,13 @@ for j = 1:m
     u_nom(:,j) = c';
 end
 
-T_end = Result.x_k(end);
+T_rejoin = Result.x_k(end);
 
-warm.result = Result;
-warm.state = x_nom;
-warm.ctrl = u_nom;
+if converged %only save converged solutions as warm starts
+    warm.result = Result;
+    warm.state = x_nom;
+    warm.ctrl = u_nom;
+end
 
 
 end

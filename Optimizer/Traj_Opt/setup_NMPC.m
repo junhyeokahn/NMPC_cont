@@ -3,7 +3,7 @@ function [NMPC_Prob,L_e,L_e_full,s_t] = ...
                f,B,df,state_con,u_con,...
                N,Tp,delta,dt,...
                P,alpha,RPI_bound,...
-               x_eq,obs,Q,Q_T,R,Name)
+               Q,Q_T,x_eq,R,u_eq,obs,Name)
 
 %% Constants
 
@@ -43,7 +43,7 @@ D = sparse(kron(D,eye(n)));
 
 %State node values: [x_t0,...,x_tN]
 %Control node values: [u_t0,...,u_tN]
-%Rejoin MP time: T_end
+%Rejoin MP time: T_star
 
 % n_vars = (N+1)*(n+m) + 1;
 
@@ -52,41 +52,42 @@ D = sparse(kron(D,eye(n)));
 % u_eq = zeros(m,1);
 
 x_eq_all = kron(ones(N+1,1),x_eq);
-u_eq_all = kron(ones(N+1,1),zeros(m,1));
+u_eq_all = kron(ones(N+1,1),u_eq);
 
 xu_eq = [x_eq_all;u_eq_all];
 
 Q_bar = kron(diag(w),Q); R_bar = kron(diag(w),R);
 Q_tilde = Q_bar + kron(diag([zeros(N,1);(2/Tp)]),Q_T);
-% Q_tilde = Q_bar;
 
 F = sparse(blkdiag(Q_tilde,R_bar));
-% F_pattern = sparse(F~=0);
     
 B_full = sparse(kron(eye(N+1),B));
 
 xu_L = [kron(ones(N+1,1),x_L);
         kron(ones(N+1,1),u_L);
-        0];
+        delta];
 xu_U = [kron(ones(N+1,1),x_U);
         kron(ones(N+1,1),u_U);
         MP_t(end)]; 
        
-MPC_cost = @(xu) (Tp/2)*(xu(1:end-1)-xu_eq)'*F*(xu(1:end-1)-xu_eq)-xu(end);
-MPC_grad = @(xu) [Tp*F*(xu(1:end-1)-xu_eq);-1];
+gamma = 3;    
+MPC_cost = @(xu) (Tp/2)*(xu(1:(N+1)*(n+m))-xu_eq)'*F*(xu(1:(N+1)*(n+m))-xu_eq)-gamma*xu(end);
+MPC_grad = @(xu) [Tp*F*(xu(1:(N+1)*(n+m))-xu_eq);-gamma];
 MPC_hess = @(xu) blkdiag(Tp*F,0);
 
-MPC_con = @(xu,Prob) NMPC_con(xu,Prob,n,N,P,D,f,B,B_full,Tp);
+MPC_con = @(xu,Prob) NMPC_con(xu,Prob,n,N,P,D,f,B_full,Tp);
 MPC_conJ = @(xu,Prob) NMPC_conJ(xu,Prob,n,N,P,D,f,df,B,B_full,Tp);
 
+%constraints:
+%dynamics,initial,terminal,obstacles
 c_L = [zeros(n*(N+1)+2,1); ones(obs.n_obs*(N+1),1)];
 c_U = [zeros(n*(N+1),1);RPI_bound;alpha;Inf*ones(obs.n_obs*(N+1),1)];
 
-xu0 = [zeros((n+m)*(N+1),1);1];
+xu0 = [zeros((n+m)*(N+1),1);Tp];
 
-global NMPC_CONJ;
-NMPC_CONJ = zeros(n*(N+1)+2+obs.n_obs*(N+1),(n+m)*(N+1)+1);
-NMPC_CONJ(1:n*(N+1),n*(N+1)+1:end-1) = -B_full;
+global NMPC_CON_J;
+NMPC_CON_J = zeros(n*(N+1)+2+obs.n_obs*(N+1),(n+m)*(N+1)+1);
+NMPC_CON_J(1:n*(N+1),n*(N+1)+1:end-1) = -B_full;
 
 % Name = 'NMPC';
 NMPC_Prob = conAssign(MPC_cost,MPC_grad,MPC_hess,[],...
