@@ -21,27 +21,38 @@ geo_solver = 'npsol';
 geo_warm = struct('sol',0,'result',[]);    
 
 %% Test Sampling-based solver
-
-FMT_path = FMTStar(FMT_V,adapt_EPS,test_state(1:2),0,x_eq(1:2),sqrt(alpha/2.5),obs_adapt);
+% 
+% FMT_path = FMTStar(FMT_V,adapt_EPS,test_state(1:2),0,x_eq(1:2),sqrt(alpha/2.5),obs_adapt);
+% 
+% dt = 0.001;
+% [MP_ad_state,MP_ad_ctrl,MP_ad_Tp] = ...
+%     compute_ad_MP(FMT_path,test_state,n,m,...
+%                f,B,df,state_constr,ctrl_constr,...
+%                dt,...
+%                P,alpha,(0.98*d_bar)^2,...
+%                Q,x_eq,R,u_eq,obs_adapt,lambda,d_bar,'MP_A');
+% 
+% select_path = 'ad';           
+% visualize_PVTOL;
 
 %% Setup MP numerics
 
 % PVTOL:
 Tp = 19;
-dt = 0.001;
 N_mp = 120;
+dt = 0.001;
 
-T_mpc = 3;
+T_mpc = 4;
 dt_sim = 0.002;
 delta = 1;
-N_mpc = 12;
+N_mpc = 16;
 
 % Setup motion planning problem
 [MP_Prob,L_e_mp,MP_st] = setup_MP(n,m,...
     f,B,df, state_constr ,ctrl_constr,...
     N_mp,Tp,dt,...
     P,alpha,(0.98*d_bar)^2,...
-    zeros(n),x_eq,R,u_eq,obs,'MP');
+    zeros(n),x_eq,R,zeros(2,1),obs,'MP');
 
 %% Generate initial guess for MP solver
 
@@ -69,6 +80,7 @@ end
 
 %% Visualize
 
+select_path = 'mp';
 visualize_PVTOL;
 
 %% Test Geodesic Numerics
@@ -105,7 +117,7 @@ geodesic_MPC.warm.result = geo_result_MPC;
     f,B,df, state_constr,ctrl_constr,...
     N_mpc,T_mpc,delta,dt,...
     P,alpha,d_bar^2,...
-    Q,Q_T,x_eq,R,u_eq,obs_mpc,'MPC');
+    Q,Q_T,x_eq,R,zeros(2,1),obs_mpc,'MPC');
 
 % load MPC_WARM_PVTOL.mat;
 

@@ -6,7 +6,7 @@ m = 2;
 %% Obstacle info
 
 %all obstacles
-obs_loc = [[3;-3],...
+obs_loc = [[3;-4],...
            [0.7;-3],...
           [-1;-0.5],...
            [2.5;-0.5],...
@@ -85,7 +85,7 @@ for i = 1:obs.n_obs
 end
 obs.M_obs = M_obs;
 
-%Setup unscaled ellipsoid for MPC problem
+%Setup unscaled ellipsoids
 [U_u,S_u,V_u] = svd(M_ccm_pos_unscaled);
 obs_mpc.U = U_u; obs_mpc.V = V_u; obs_mpc.S = S_u;
 obs_mpc.r = obs_rad_mpc + len;
@@ -93,7 +93,7 @@ obs_mpc.r = obs_rad_mpc + len;
 obs_adapt.U = U_u; obs_adapt.V = V_u; obs_adapt.S = S_u;
 obs_adapt.r = obs_rad + len;
 adapt_EPS = struct('lambda',lambda,'d_bar',d_bar,...
-                   'r',1/1.7);%d_bar*(1-exp(-lambda*(0.6/1.7))));
+                   'r',1/1.7);
 
 %final state constraint
 P = 2.5*eye(n);

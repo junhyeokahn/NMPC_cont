@@ -1,4 +1,11 @@
-close all
+
+% close all
+
+if strcmp(select_path,'ad')
+    MP_state = MP_ad_state;
+    MP_ctrl = MP_ad_ctrl;
+end
+
 figure(1); 
 hold on
 %Obstacles
@@ -6,7 +13,7 @@ for i_ob = 1:obs.n_obs
     Ellipse_plot(eye(2)*(1/(obs.r(i_ob)+len)^2),obs.pos(:,i_ob), 25,'r',1);
 end
 %RCI set
-for i = 1:(delta/dt):length(MP_state)
+for i = 1:(1/dt):length(MP_state)
     Ellipse_plot(M_ccm_pos,MP_state(i,1:2)',25,'k');
 end
 %Terminal set
