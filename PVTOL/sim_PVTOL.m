@@ -62,6 +62,10 @@ end
 
 visualize_PVTOL;
 
+%% Test Sampling-based solver
+
+FMT_path = FMTStar(FMT_V,adapt_EPS,test_state(1:2),0,x_eq(1:2),sqrt(alpha/2.5),obs_adapt);
+
 %% Test Geodesic Numerics
 
 tic

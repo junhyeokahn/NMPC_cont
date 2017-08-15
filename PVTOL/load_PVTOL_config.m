@@ -21,13 +21,9 @@ obs_rad = [1,0.9,0.8,1.0,1,0.9,0.5,0.6];
 obs_loc_mpc = obs_loc(:,[2,3,4,6,7]);  
 obs_rad_mpc = obs_rad([2;3;4;6;7]);
 
-% obs_loc = [];
-% obs_loc_mpc = [];
-% obs_rad = [];
-% obs_rad_mpc = [];
-
 obs = struct('n_obs',length(obs_rad),'pos',obs_loc,'r',obs_rad);
 obs_mpc = struct('n_obs',length(obs_rad_mpc),'pos',obs_loc_mpc,'r',obs_rad_mpc);
+obs_adapt = obs;
 
 %% Setup Metric
 
@@ -94,6 +90,11 @@ obs.M_obs = M_obs;
 obs_mpc.U = U_u; obs_mpc.V = V_u; obs_mpc.S = S_u;
 obs_mpc.r = obs_rad_mpc + len;
 
+obs_adapt.U = U_u; obs_adapt.V = V_u; obs_adapt.S = S_u;
+obs_adapt.r = obs_rad + len;
+adapt_EPS = struct('lambda',lambda,'d_bar',d_bar,...
+                   'r',d_bar*(1-exp(-lambda*(0.6/1.7))));
+
 %final state constraint
 P = 2.5*eye(n);
 alpha = 1e-3;
@@ -114,3 +115,16 @@ test_state = [-4.4;
                0.5;
                0;
                0];
+
+%% Initialize sampling-based planner
+% FMT_V = generate_sample_set_2D(state_constr(1,2),state_constr(2,2),x_eq(1:2),sqrt(alpha/2.5),2000,5,adapt_EPS);
+load('FMT_V.mat');
+
+figure()
+hold on
+for i = 1:length(FMT_V)
+    for j = 1:length(FMT_V(i).N)
+       line([FMT_V(i).coord(1), FMT_V(FMT_V(i).N(j)).coord(1)],...
+            [FMT_V(i).coord(2), FMT_V(FMT_V(i).N(j)).coord(2)]);
+    end
+end
