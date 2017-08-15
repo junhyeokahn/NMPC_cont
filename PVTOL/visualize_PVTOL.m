@@ -1,5 +1,5 @@
 close all
-figure(); 
+figure(1); 
 hold on
 %Obstacles
 for i_ob = 1:obs.n_obs

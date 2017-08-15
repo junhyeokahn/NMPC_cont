@@ -40,14 +40,15 @@ while ~z_in_goal
             for j = 1:length(N_x)
                 if V_open(N_x(j))< Inf
                     y = V(N_x(j));
-                    c = dist_geod(y,x,EPS);
+%                     c = y.cost + dist_3d(y.coord,x.coord); 
+                      c = dist_geod(y,x,EPS);
                     if c < c_min
                         c_min = c;
                         y_min = N_x(j); %store min node index
                     end
                 end
             end
-            if (y_min < Inf) && (checkCollision(V(y_min),x,obs,EPS))
+            if (y_min < Inf)  && (checkCollision(V(y_min),x,obs,EPS))
                 %add x to graph
                 V(N_z(i)).parent = y_min; V(N_z(i)).cost = c_min; 
                 %add x to V_open_new
@@ -74,22 +75,27 @@ end
 FMT_time = toc
 
 %% Plot tree
-figure(2)
-for i = 2:length(V)
-    p = V(i).parent;
-    if (p~=0)
-        line([V(i).coord(1),V(p).coord(1)],[V(i).coord(2),V(p).coord(2)],[V(i).coord(3),V(p).coord(3)],'Color','k');
-    end
-end
+% figure(2)
+% for i = 2:length(V)
+%     p = V(i).parent;
+%     if (p~=0)
+%         line([V(i).coord(1),V(p).coord(1)],[V(i).coord(2),V(p).coord(2)],[V(i).coord(3),V(p).coord(3)],'Color','k');
+%     end
+% end
 
 %% Recover optimal path
 
 % Search backwards from goal to start to find the optimal least cost path
+figure(1)
+%Obstacles
+for i_ob = 1:obs.n_obs
+    Ellipse_plot(eye(2)*(1/(obs.r(i_ob))^2),obs.pos(:,i_ob), 25,'r',1);
+end
 q_end = z;
 path(1) = q_end;
 while q_end.parent ~= 0
     start = q_end.parent;
-    line([q_end.coord(1), V(start).coord(1)], [q_end.coord(2), V(start).coord(2)], [q_end.coord(3), V(start).coord(3)], 'Color', 'b', 'LineWidth', 2);
+    line([q_end.coord(1), V(start).coord(1)], [q_end.coord(2), V(start).coord(2)], 'Color', 'b', 'LineWidth', 2);
     hold on
     q_end = V(start);
     path = [path,q_end];
@@ -97,14 +103,6 @@ end
 
 %flip to give start to end
 path = fliplr(path);
-
-%% Final plot
-figure(1)
-hold on  
-%Plot path
-for i = 1:length(path)-1
-    line([path(i).coord(1), path(i+1).coord(1)], [path(i).coord(2), path(i+1).coord(2)], 'Color', 'b', 'LineWidth', 2);
-end
 
 end
 

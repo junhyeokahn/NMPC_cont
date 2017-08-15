@@ -20,6 +20,10 @@ geo_solver = 'npsol';
     
 geo_warm = struct('sol',0,'result',[]);    
 
+%% Test Sampling-based solver
+
+FMT_path = FMTStar(FMT_V,adapt_EPS,test_state(1:2),0,x_eq(1:2),sqrt(alpha/2.5),obs_adapt);
+
 %% Setup MP numerics
 
 % PVTOL:
@@ -39,7 +43,12 @@ N_mpc = 12;
     P,alpha,(0.98*d_bar)^2,...
     zeros(n),x_eq,R,u_eq,obs,'MP');
 
-load MP_WARM_PVTOL.mat;
+%% Generate initial guess for MP solver
+
+load MP_WARM_PVTOL.mat; %existing stored solution
+
+%sol = 0: no guess, sol = 0.5: sampling based guess
+
 %mp_warm = struct('Tp',Tp,'shift',0,'sol',0,...
 %                  's_t',MP_st,'state',[],'ctrl',[],'result',[]);
 
@@ -61,10 +70,6 @@ end
 %% Visualize
 
 visualize_PVTOL;
-
-%% Test Sampling-based solver
-
-FMT_path = FMTStar(FMT_V,adapt_EPS,test_state(1:2),0,x_eq(1:2),sqrt(alpha/2.5),obs_adapt);
 
 %% Test Geodesic Numerics
 

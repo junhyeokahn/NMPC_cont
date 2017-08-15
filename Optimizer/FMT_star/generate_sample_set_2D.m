@@ -16,7 +16,7 @@ maxNodes = N+N_goal;
 %% Generate node struct
 
 q_empty.coord = [0 0]; %coords
-q_empty.cost = 0; %accumulated cost 
+q_empty.cost = Inf; %accumulated cost 
 q_empty.parent = 0; %parent
 q_empty.idx = 0; %index in node set
 q_empty.N = []; %nearest neighbor node set

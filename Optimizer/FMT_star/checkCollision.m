@@ -12,7 +12,7 @@ for t = 1:length(tau)
     for i = 1:obs.n_obs
         S_new = (sqrt(E_time_bound(t)*(obs.S\eye(2))) + (obs.r(i))*eye(2))^2\eye(2);
         M = obs.U*S_new*obs.V';
-        if (q_traj(:,t)'*M*q_traj(:,t) <= 1)
+        if ((q_traj(:,t)-obs.pos(:,i))'*M*(q_traj(:,t)-obs.pos(:,i)) <= 1)
             isValid = 0;
             return;
         end

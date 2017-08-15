@@ -6,7 +6,7 @@ m = 2;
 %% Obstacle info
 
 %all obstacles
-obs_loc = [[3;-4],...
+obs_loc = [[3;-3],...
            [0.7;-3],...
           [-1;-0.5],...
            [2.5;-0.5],...
@@ -15,7 +15,7 @@ obs_loc = [[3;-4],...
            [2.5;3.8],...
            [-2;4]];
 
-obs_rad = [1,0.9,0.8,1.0,1,0.9,0.5,0.6];       
+obs_rad = [1,0.9,0.8,0.9,1,0.9,0.5,0.6];       
 
 %obstacles considered during MPC iterations (can ignore some) 
 obs_loc_mpc = obs_loc(:,[2,3,4,6,7]);  
@@ -93,7 +93,7 @@ obs_mpc.r = obs_rad_mpc + len;
 obs_adapt.U = U_u; obs_adapt.V = V_u; obs_adapt.S = S_u;
 obs_adapt.r = obs_rad + len;
 adapt_EPS = struct('lambda',lambda,'d_bar',d_bar,...
-                   'r',d_bar*(1-exp(-lambda*(0.6/1.7))));
+                   'r',1/1.7);%d_bar*(1-exp(-lambda*(0.6/1.7))));
 
 %final state constraint
 P = 2.5*eye(n);
@@ -117,14 +117,14 @@ test_state = [-4.4;
                0];
 
 %% Initialize sampling-based planner
-% FMT_V = generate_sample_set_2D(state_constr(1,2),state_constr(2,2),x_eq(1:2),sqrt(alpha/2.5),2000,5,adapt_EPS);
+% FMT_V = generate_sample_set_2D(state_constr(1,2),state_constr(2,2),x_eq(1:2),sqrt(alpha/2.5),1000,5,adapt_EPS);
 load('FMT_V.mat');
 
-figure()
-hold on
-for i = 1:length(FMT_V)
-    for j = 1:length(FMT_V(i).N)
-       line([FMT_V(i).coord(1), FMT_V(FMT_V(i).N(j)).coord(1)],...
-            [FMT_V(i).coord(2), FMT_V(FMT_V(i).N(j)).coord(2)]);
-    end
-end
+% figure()
+% hold on
+% for i = 1:5:length(FMT_V)
+%     for j = 1:length(FMT_V(i).N)
+%        line([FMT_V(i).coord(1), FMT_V(FMT_V(i).N(j)).coord(1)],...
+%             [FMT_V(i).coord(2), FMT_V(FMT_V(i).N(j)).coord(2)]);
+%     end
+% end

@@ -4,7 +4,7 @@ function N = Near(V,q,EPS)
 N = zeros(length(V),1);
 count = 1;
 for i = 1:length(V)
-    if (V(i).idx~=q.idx) && (dist_geod(V(i), q, EPS) <= EPS.r)
+    if (V(i).idx~=q.idx) && (dist_3d(V(i).coord,q.coord)<= EPS.r)
         N(count) = V(i).idx;
         count = count+1;
     end
