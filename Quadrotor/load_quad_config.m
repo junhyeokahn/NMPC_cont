@@ -49,7 +49,7 @@ W_fnc = struct('W_eval',W_eval,'w_poly_fnc',w_poly_fnc);
 dW_fnc = @(x) {dw_poly_r_fnc(x), dw_poly_p_fnc(x), dw_poly_th_fnc(x)};
 n_W = [7,8,9];
 
-sigma_ThBw = ;
+sigma_ThBw = 0.684;
 lambda = 0.95;
 
 %% Setup lower-level controller
@@ -63,11 +63,12 @@ ki_om = 0.0;
 
 w_max = 0.1;
 
+W_upper = W_upper_mat;
 M_ccm = W_upper\eye(n);
 d_bar = (w_max*sigma_ThBw/lambda);
 
 In = eye(n);
 %Maximal position tube
-M_ccm_pos = (1/d_bar^2)*((In(1:3,:)*W_upper*In(1:3,:)')\eye(2)); 
+M_ccm_pos = (1/d_bar^2)*((In(1:3,:)*W_upper*In(1:3,:)')\eye(3)); 
 [U_pos,S_pos,V_pos] = svd(M_ccm_pos);
 
