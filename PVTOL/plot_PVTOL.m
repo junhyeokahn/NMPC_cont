@@ -1,6 +1,9 @@
 %% Plot
 
-%2D State Plot
+%% 2D State Plot
+
+close all; 
+
 figure(1)
 hold on
 %Nominal motion plan
@@ -16,28 +19,29 @@ if (~track_traj)
         %MPC reference trajectory executed segement
         plot(MPC_state{i_mpc}(1:round(delta/dt)+1,1),MPC_state{i_mpc}(1:round(delta/dt)+1,2),'r--','linewidth',1.5);
         
-        if i_mpc<T_steps_MPC
-            num_pnts = 3;
-        else
-            num_pnts = 5;
-        end
+%         if i_mpc<T_steps_MPC
+%             num_pnts = 3;
+%         else
+%             num_pnts = 5;
+%         end
+        num_points = delta/dt;
         
         %Outer geodesic ball at start of MPC segment
         E_start = geo_energy(1+(i_mpc-1)*(delta/dt_sim),2);
         Ellipse_plot(M_ccm_pos_unscaled*(1/E_start),MPC_state{i_mpc}(1,1:2)',30,'g');
-        Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1,1:2)',30,'k');
+%         Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1,1:2)',30,'k');
         
         t_mpc_span = linspace(0,delta,num_pnts);
         %Evolution of outer geodesic ball over MPC segment
         for j = 2:length(t_mpc_span)-1
             E_j = (sqrt(E_start)*exp(-lambda*t_mpc_span(j)) + d_bar*(1-exp(-lambda*t_mpc_span(j))))^2;
-            Ellipse_plot(M_ccm_pos_unscaled*(1/E_j),MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,'y');
-            Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,'k');
+            Ellipse_plot(M_ccm_pos_unscaled*(1/E_j),MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,'b');
+%             Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,'k');
         end
         %Final outer geodesic ball
         E_end = (sqrt(E_start)*exp(-lambda*delta) + d_bar*(1-exp(-lambda*delta)))^2;
         Ellipse_plot(M_ccm_pos_unscaled*(1/E_end),MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'r');
-        Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'k');
+%         Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'k');
     end
 else
     d0 = sqrt(geo_energy(1,1));
@@ -60,7 +64,7 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 grid on; 
 % axis equal
 
-% State Trajectory
+%% State Trajectory
 figure()
 hold on
 plot(solve_t, x_act(:,3:6),'linewidth',2);

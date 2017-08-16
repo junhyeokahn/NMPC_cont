@@ -1,5 +1,5 @@
 function [solved,w_lower,w_upper] = ...
-    find_metric_QUAD_SPOT_89(n,g,r_lim,p_lim,th_lim_low,th_lim_high,...
+    find_metric_QUAD_SPOT_89(n,g,r_lim,p_lim,th_lim_low,th_lim_high,vx_lim,vy_lim,vz_lim,...
             condn,lambda,ccm_eps,return_metric)
 %%
 
@@ -59,31 +59,45 @@ prog = prog.withIndeterminate(dsix);
 
 %% Parametrize W (2)
 
-w_states = [x(7);x(8);x(9)];
+w_states = x(7:9);
 
 w_order = 4;
-w_poly = monomials(w_states,0:w_order);
+[w_poly, w_poly_mat] = monomials(w_states,0:w_order);
+
+W_perp_list = cell(length(w_poly),1);
 W_list = cell(length(w_poly),1);
 W_pc_list = cell(length(w_poly),1);
 W_c_list = cell(length(w_poly),1);
 
-[prog, W_perp] = prog.newSym(6);
+[prog, W_perp_list{1}] = prog.newSym(6);
 [prog, W_pc_list{1}] = prog.newFree(6,3);
 [prog, W_c_list{1}] = prog.newSym(3);
 
-W_list{1} = [W_perp, W_pc_list{1};
+W_list{1} = [W_perp_list{1}, W_pc_list{1};
             W_pc_list{1}', W_c_list{1}];
 W = W_list{1}*w_poly(1);
 
 for i = 2:length(w_poly)
+    if size(w_poly_mat,2)>3
+        if (sum(w_poly_mat(i,end-2:end))>0)
+            W_perp_list{i} = zeros(6);
+        else
+            [prog, W_perp_list{i}] = prog.newSym(6);
+        end
+    else
+        W_perp_list{i} = zeros(6);
+    end
     [prog, W_c_list{i}] = prog.newSym(3);
     [prog, W_pc_list{i}] = prog.newFree(6,3);
-    W_list{i} = [zeros(6), W_pc_list{i};
-                W_pc_list{i}', W_c_list{i}];
+    
+    W_list{i} = [W_perp_list{i}, W_pc_list{i};
+                 W_pc_list{i}', W_c_list{i}];
     W = W + W_list{i}*w_poly(i);
 end
 
-dW_perp_f = zeros(6);
+W_perp = W(1:6,1:6);
+dW_perp_f = diff(W_perp(:),x)*f;
+dW_perp_f = reshape(dW_perp_f,6,6);
 
 %% Definiteness conditions
 
@@ -92,10 +106,13 @@ box_lim = [r_lim^2-x(7)^2;
            p_lim^2-x(8)^2;
            x(9) - th_lim_low;
            th_lim_high - x(9)];
+%            vx_lim^2-x(4)^2;
+%            vy_lim^2-x(5)^2;
+%            vz_lim^2-x(6)^2];
 
-l_order = 4;
+l_order = w_order;
 l_def_states = w_states;
-n_def_L = 4;
+n_def_L = length(box_lim);
 
 % [w_def_mon, w_def_mat] = monomials([l_def_states;dnin],0:l_order);
 % w_def_keep = find(sum(w_def_mat(:,4:12),2)==2); %only keep quadratics in dnin
@@ -108,16 +125,16 @@ l_ccm_states = w_states;
 lc_order = l_order;
 
 [ccm_def_mon_rp, ccm_def_mat_rp] = monomials([l_ccm_states;dsix],0:lc_order+2);
-ccm_def_keep_rp = find(sum(ccm_def_mat_rp(:,4:9),2)==2); %only keep quadratics in dsix
+ccm_def_keep_rp = find(sum(ccm_def_mat_rp(:,length(l_ccm_states)+1:end),2)==2); %only keep quadratics in dsix
 ccm_def_mon_rp = ccm_def_mon_rp(ccm_def_keep_rp);
 
 [ccm_def_mon_th, ccm_def_mat_th] = monomials([l_ccm_states;dsix],0:lc_order);
-ccm_def_keep_th = find(sum(ccm_def_mat_th(:,4:9),2)==2); %only keep quadratics in dsix
+ccm_def_keep_th = find(sum(ccm_def_mat_th(:,length(l_ccm_states)+1:end),2)==2); %only keep quadratics in dsix
 ccm_def_mon_th = ccm_def_mon_th(ccm_def_keep_th);
 
 % [prog, Lc_v]  = prog.newSDSOSPoly(monomials(l_ccm_states,0:2),3);
 [prog, Lc_rp] = prog.newSOSPoly(ccm_def_mon_rp,2);
-[prog, Lc_th] = prog.newSOSPoly(ccm_def_mon_th,2);
+[prog, Lc_th] = prog.newSOSPoly(ccm_def_mon_th,length(box_lim)-2);
 Lc = [Lc_rp; Lc_th];
 
 %W uniform bounds
@@ -196,6 +213,9 @@ if (return_metric)
         dw_poly_r = diff(w_poly,x(7));
         dw_poly_p = diff(w_poly,x(8));
         dw_poly_th = diff(w_poly,x(9));
+        dw_poly_vx = diff(w_poly,x(4));
+        dw_poly_vy = diff(w_poly,x(5));
+        dw_poly_vz = diff(w_poly,x(6));
         
         W_upper_mat = clean(double(SOS_soln.eval(W_upper)),1e-4);
         
@@ -206,6 +226,9 @@ if (return_metric)
         dw_poly_r_fnc = mss2fnc(dw_poly_r,x,randn(length(x),2));
         dw_poly_p_fnc = mss2fnc(dw_poly_p,x,randn(length(x),2));
         dw_poly_th_fnc = mss2fnc(dw_poly_th,x,randn(length(x),2));
+        dw_poly_vx_fnc = mss2fnc(dw_poly_vx,x,randn(length(x),2));
+        dw_poly_vy_fnc = mss2fnc(dw_poly_vy,x,randn(length(x),2));
+        dw_poly_vz_fnc = mss2fnc(dw_poly_vz,x,randn(length(x),2));
         
         %% Put together
         W_exec = 'W_eval = @(ml)';
@@ -220,7 +243,7 @@ if (return_metric)
 
         %% Execute
         eval(W_exec);
-        save('metric_QUAD_vectorized.mat','W_eval','w_poly_fnc','dw_poly_r_fnc','dw_poly_p_fnc','dw_poly_th_fnc','W_upper_mat');
+        save('metric_QUAD_vectorized.mat','W_eval','w_poly_fnc','dw_poly_r_fnc','dw_poly_p_fnc','dw_poly_th_fnc','dw_poly_vx_fnc','dw_poly_vy_fnc','dw_poly_vz_fnc','W_upper_mat');
     end
 end
 end

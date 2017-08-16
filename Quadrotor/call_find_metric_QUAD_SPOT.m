@@ -14,6 +14,9 @@ r_lim = pi/3;
 p_lim = pi/3;
 th_lim_low = 0.5*g;
 th_lim_high = 2*g;
+vx_lim = 1.5;
+vy_lim = 1.5;
+vz_lim = 1.5;
 
 run_global_opt = 0; %global opt or pick a solution
 
@@ -96,11 +99,11 @@ if (run_global_opt)
 else
     %% Pick a solution
     
-    lambda = 0.61;
-    condn = 20;
+    lambda = 0.95;
+    condn = 80;
     return_metric = 1;
     
-    [sos_prob,w_lower,w_upper] = find_metric_QUAD_SPOT_89(n,g,r_lim,p_lim,th_lim_low,th_lim_high,...
+    [sos_prob,w_lower,w_upper] = find_metric_QUAD_SPOT_89(n,g,r_lim,p_lim,th_lim_low,th_lim_high,vx_lim,vy_lim,vz_lim,...
         condn,lambda,ccm_eps,return_metric);
     
     %% Compute aux control bound
@@ -115,6 +118,9 @@ else
         zeros(3,6)];
     
     ctrl_N = 15;
+    vx_range = linspace(-vx_lim,vx_lim,ctrl_N);
+    vy_range = linspace(-vy_lim,vy_lim,ctrl_N);
+    vz_range = linspace(-vz_lim,vz_lim,ctrl_N);
     r_range = linspace(-r_lim, r_lim, ctrl_N);
     p_range = linspace(-p_lim, p_lim, ctrl_N);
     th_range = linspace(th_lim_low, th_lim_high, 2*ctrl_N);
@@ -142,37 +148,51 @@ else
     df_perp_mat      = @(x) [zeros(3), eye(3),zeros(3,3);
         zeros(3,6), -(db_T_q(x)*[1;0])*x(9), -(db_T_q(x)*[0;1])*x(9), -b_T(x)];
     
-    eig_CCM = zeros(ctrl_N, ctrl_N, ctrl_N);
+%     eig_CCM = zeros(ctrl_N,ctrl_N,ctrl_N,ctrl_N, ctrl_N, ctrl_N);
+%     eig_W = zeros(ctrl_N,ctrl_N, ctrl_N,ctrl_N,ctrl_N,ctrl_N,2);
+%     sigma_ThBw = zeros(ctrl_N,ctrl_N,ctrl_N,ctrl_N, ctrl_N, ctrl_N);
+    eig_CCM = zeros(ctrl_N,ctrl_N,ctrl_N);
     eig_W = zeros(ctrl_N,ctrl_N, ctrl_N,2);
     sigma_ThBw = zeros(ctrl_N,ctrl_N,ctrl_N);
     
-    for i4 = 1:length(r_range)
-        for i5 = 1:length(p_range)
-            for i6 = 1:length(th_range)
+%     for i1 = 1:length(vx_range)
+%         for i2 = 1:length(vy_range)
+%             for i3 = 1:length(vz_range)
+i1 = 1; i2 = 1; i3 = 1;
                 
-                x = [zeros(6,1);
-                    r_range(i4); p_range(i5); th_range(i6)];
-                
-                W = W_eval(w_poly_fnc(x));
-                M = W\eye(n);
-                Theta = chol(M);
-                Theta_Bw = Theta*Bw;
-                sigma_ThBw(i4,i5,i6) = max(sqrt(eig(Theta_Bw'*Theta_Bw)));
-                
-                L = chol(W);
-                
-                f = f_mat(x);
-                df_perp = df_perp_mat(x);
-                F = df_perp*W*B_perp + B_perp'*W*df_perp' + 2*lambda*W(1:6,1:6);
-                
-                R_CCM = -F;
-                
-                eig_CCM(i4,i5,i6) = min(eig(R_CCM));
-                eig_W(i4,i5,i6,1) = min(eig(W));
-                eig_W(i4,i5,i6,2) = max(eig(W));
-            end
-        end
-    end
+                for i4 = 1:length(r_range)
+                    for i5 = 1:length(p_range)
+                        for i6 = 1:length(th_range)
+                            
+                            x = [zeros(3,1);
+                                vx_range(i1);vy_range(i2);vz_range(i3);
+                                r_range(i4); p_range(i5); th_range(i6)];
+                            
+                            W = W_eval(w_poly_fnc(x));
+                            M = W\eye(n);
+                            Theta = chol(M);
+                            Theta_Bw = Theta*Bw;
+                            sigma_ThBw(i4,i5,i6) = max(sqrt(eig(Theta_Bw'*Theta_Bw)));
+                            
+                            L = chol(W);
+                            
+                            f = f_mat(x);
+                            df_perp = df_perp_mat(x);
+                            
+                            dW_f = W_eval(dw_poly_vx_fnc(x))*f(4) + W_eval(dw_poly_vy_fnc(x))*f(5) + W_eval(dw_poly_vz_fnc(x))*f(6);
+                            F = -dW_f(1:6,1:6) + df_perp*W*B_perp + B_perp'*W*df_perp' + 2*lambda*W(1:6,1:6);
+                            
+                            R_CCM = -F;
+                            
+                            eig_CCM(i4,i5,i6) = min(eig(R_CCM));
+                            eig_W(i4,i5,i6,1) = min(eig(W));
+                            eig_W(i4,i5,i6,2) = max(eig(W));
+                        end
+                    end
+                end
+%             end
+%         end
+%     end
     
     d_bar = max(sigma_ThBw(:))/lambda;
     disp('d_bar'); disp(d_bar);

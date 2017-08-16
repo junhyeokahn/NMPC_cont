@@ -369,4 +369,4 @@ plot([0:dt:t_end],cumtrapz([0:dt:t_end],J_nom_mpc),'b-','linewidth',2);
 
 %% 
 
-% plot_PVTOL_movie;
+plot_PVTOL_movie;

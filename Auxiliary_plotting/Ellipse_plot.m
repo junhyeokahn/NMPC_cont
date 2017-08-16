@@ -33,7 +33,7 @@ function h =  Ellipse_plot(A, C, varargin)
 
 %%%%%%%%%%%  start  %%%%%%%%%%%%%%%%%%%%%%%%%%%
 N = 20; % Default value for grid
-f_al = 0.1;
+f_al = 0.6;
 
 % See if the user wants a different value for N.
 %----------------------------------------------
@@ -112,7 +112,7 @@ if strcmp(Type,'2D')
     hold on;
 %     plot(C(1),C(2),'b*');
     axis equal, grid
-    h = patch(X(1,:)',X(2,:)',c,'facealpha',f_al);
+    h = patch(X(1,:)',X(2,:)',c,'facealpha',f_al,'Edgecolor','none');
 else
     h = mesh(XX,YY,ZZ); colormap('winter');
     axis equal
