@@ -18,7 +18,7 @@ Tp = t(end);
 %Generate timeseries data for simulation
 thrust_dot = ctrl_dyn_nom(:,1)/mq;
 MP_state = [state_nom(:,1:8),thrust_nom/mq]; %xc_nom
-MP_ctrl = [ctrl_dyn_nom(:,2:3),thrust_dot;ctrl_dyn_nom(:,4)]; %[uc_nom, yaw_dot_nom]
+MP_ctrl = [ctrl_dyn_nom(:,2:3),thrust_dot,ctrl_dyn_nom(:,4)]; %[uc_nom, yaw_dot_nom]
 MP_yaw = state_nom(:,9);
 
 %% Visualize
@@ -43,7 +43,7 @@ dt_sim = 1/500;
 
 %Initial conditions
 thrust_init = g;
-x_init = [state_nom(1,:)'+[0.1*randn(6,1);zeros(3,1)];
+x_init = [state_nom(1,:)'+[0.01*randn(6,1);zeros(3,1)];
          zeros(3,1);
           thrust_init];
 
@@ -149,7 +149,7 @@ for i = 1:T_steps
     state = d_state(end,:)';
     x_act(i+1,:) = state';
     state_xc = [state(1:8);state(13)];
-    yaw = state(9);
+    yaw = wrapToPi(state(9));
 end
 
 

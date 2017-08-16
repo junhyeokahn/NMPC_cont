@@ -36,7 +36,7 @@ xlabel('Time [s]'); ylabel('[deg]');
 legend('e_\psi');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
-%Control effort
+%% Control effort
 figure()
 hold on
 % plot(t,thrust_nom,'r-','linewidth',1.5);
@@ -74,7 +74,7 @@ ylabel('$\dot{\psi}$ [rad/s]','interpreter','latex');
 grid on
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
-
+%% Rotation angles
 figure()
 subplot(2,1,1)
 plot(t, MP_state(:,7)*(180/pi),'--','linewidth',2); hold on
@@ -92,15 +92,41 @@ ylabel('$\theta$ [deg]','interpreter','latex');
 grid on
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
-% Geodesic Energy
+%% Geodesic Energy
 figure()
-plot(solve_t,geo_energy,'b-','linewidth',2); hold on
-plot(solve_t,(d_bar^2)*ones(length(solve_t),1),'k-','linewidth',2);
+plot(solve_t(1:end-1),geo_energy,'b-','linewidth',2); hold on
+plot(solve_t(1:end-1),(d_bar^2)*ones(length(solve_t)-1,1),'k-','linewidth',2);
 % plot(t(1:end-1),E(1)*exp(-2*lambda*t(1:end-1)),'r-','linewidth',2);
 grid on
 xlabel('Time [s]'); ylabel('Energy');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
+%% Computation time
+
+figure()
+hold on
+plot(solve_t(1:end-1),ctrl_solve_time(:,1),'bs','markersize',10,'markerfacecolor','m');
+plot(solve_t(1:end-1),ctrl_solve_time(:,2),'rd','markersize',10,'markerfacecolor','k');
+grid on
+legend('Geo','Aux');
+xlabel('Time [s]');
+ylabel('Solve time [s]'); title('Solve time');
+set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+
+%% Solve success
+
+figure()
+hold on
+plot(solve_t(1:end-1),opt_solved(:,1),'bs','markersize',15,'markerfacecolor','m');
+plot(solve_t(1:end-1),opt_solved(:,2),'rd','markersize',10,'markerfacecolor','k');
+grid on
+legend('Geodesic (0,1,6)','Aux (0)');
+xlabel('Time [s]');
+title('Convergence');
+set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+ 
+
+%%
 
 keyboard;
 %% Animate

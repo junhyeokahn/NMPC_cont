@@ -16,13 +16,15 @@ m = 3;
 %pos,vel, roll, pitch, yaw, om, thrust_sp
 f = @(x) [x(4:6);
           [0;0;g;]-[sin(x(8)); -cos(x(8))*sin(x(7)); cos(x(8))*cos(x(7))]*x(13);
-          R_eul(x(7:9));
-          -cross(om,Jq*om);
+          R_eul(x(7:9))*x(10:12);
+          -cross(x(10:12),Jq*x(10:12));
           0];
       
-B =      [zeros(3,1), Jq\eye(3);
-          1, zeros(1,3)];
-      
+B =      [zeros(9,4);
+          zeros(3,1), Jq\eye(3);
+          1,zeros(1,3)];
+  
+f_ctrl = @ f_xc;      
 B_ctrl = [zeros(6,3);
           eye(3)];
 

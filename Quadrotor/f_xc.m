@@ -1,4 +1,4 @@
-function f_ctrl = f_ctrl(xc)
+function f_ctrl = f_xc(xc)
 %#codegen
 g = 9.81;
 
