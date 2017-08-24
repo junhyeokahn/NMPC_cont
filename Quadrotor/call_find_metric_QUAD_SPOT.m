@@ -10,8 +10,8 @@ n = 9;
 g = 9.81;
 ccm_eps = 1e-1;
 
-r_lim = pi/3;
-p_lim = pi/3;
+r_lim = pi/4;
+p_lim = pi/4;
 th_lim_low = 0.5*g;
 th_lim_high = 2*g;
 vx_lim = 1.5;
@@ -100,7 +100,7 @@ else
     %% Pick a solution
     
     lambda = 0.95;
-    condn = 80;
+    condn = 65;
     return_metric = 1;
     
     [sos_prob,w_lower,w_upper] = find_metric_QUAD_SPOT_89(n,g,r_lim,p_lim,th_lim_low,th_lim_high,vx_lim,vy_lim,vz_lim,...
@@ -117,7 +117,7 @@ else
     B_perp = [eye(6);
         zeros(3,6)];
     
-    ctrl_N = 15;
+    ctrl_N = 30;
     vx_range = linspace(-vx_lim,vx_lim,ctrl_N);
     vy_range = linspace(-vy_lim,vy_lim,ctrl_N);
     vz_range = linspace(-vz_lim,vz_lim,ctrl_N);

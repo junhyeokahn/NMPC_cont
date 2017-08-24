@@ -4,9 +4,8 @@ function [solved,w_lower,w_upper] = ...
 %%
 
 
-% W_scale = diag([0.02;0.0268;0.0367;0.0089;0.02;0.02]);
+% W_scale = diag([0.02;0.02;0.0367;0.005;0.001;0.002]);
 W_scale = diag([0.001;0.02;0.0367;0.005;0.001;0.002]);
-% W_scale = zeros(n);
 
 % sin_x = @(x) 0.05059*(x/(pi/6));
 % cos_x = @(x) 0.9326 - 0.06699*(2*(x/(pi/6))^2 -1);
@@ -56,10 +55,7 @@ prog = prog.withIndeterminate(dfor);
 
 %% Parametrize W (2)
 
-w_poly_2 = monomials([x(3), x(4)],0:2);
-N_poly_2 = length(w_poly_2);
-w_poly = [w_poly_2;
-          monomials([x(3), x(4)],3:4)];
+w_poly = monomials([x(3), x(4)],0:4);
 
 W_list = cell(length(w_poly),1);
 W_perp_list = cell(length(w_poly),1);
@@ -76,16 +72,11 @@ W = W_list{1}*w_poly(1);
 
 for i = 2:length(w_poly)
     [prog, W_perp_list{i}] = prog.newSym(4);
-    if i<=N_poly_2
-        [prog, W_pc_list{i}] = prog.newFree(4,2);
-        [prog, W_c_list{i}] = prog.newSym(2);
-    else
-        W_pc_list{i} = zeros(4,2);
-        W_c_list{i} = zeros(2);
-    end
+    [prog, W_pc_list{i}] = prog.newFree(4,2);
+    [prog, W_c_list{i}] = prog.newSym(2);
     W_list{i} = [W_perp_list{i},W_pc_list{i};
-                 W_pc_list{i}', W_c_list{i}];
-   
+        W_pc_list{i}', W_c_list{i}];
+    
     W = W + W_list{i}*w_poly(i);
 end
 
@@ -95,39 +86,44 @@ dW_f_perp = reshape(dW_f_perp,4,4);
 
 [prog, W_upper] = prog.newSym(n);
 
-%%
+%% Definiteness conditions
 
 %Lagrange multipliers
-box_lim = [p_lim^2-x(3)^2;
+box_lim = [ p_lim^2-x(3)^2;
             vy_lim^2-x(4)^2;
             vz_lim^2-x(5)^2;
             pd_lim^2-x(6)^2];
 
 l_order = 4;
-l_def_states = [x(3);x(4); dsix]';
-[prog, Ll] = prog.newSOSPoly(monomials(l_def_states,0:l_order),2);
-[prog, Lu] = prog.newSOSPoly(monomials(l_def_states,0:l_order),2);
+l_def_states = [x(3);x(4)];
 
-lc_order = 4;
-l_ccm_states = [x(3);x(4);x(6);x(5);dfor]';
-[prog, Lc_1] = prog.newSOSPoly(monomials(l_ccm_states,0:lc_order+2),1);
-[prog, Lc_2_4] = prog.newSOSPoly(monomials(l_ccm_states,0:lc_order),3);
+[pos_def_mon, pos_def_mat] = monomials([l_def_states;dsix],0:l_order);
+% pos_def_keep = find(sum(pos_def_mat(:,3:8),2)==2); %only keep quadratics in dsix
+% pos_def_mon = pos_def_mon(pos_def_keep);
+[prog, Ll] = prog.newSOSPoly(pos_def_mon,2);
+[prog, Lu] = prog.newSOSPoly(pos_def_mon,2);
+
+lc_order = 6;
+l_ccm_states = [x(3);x(4);x(6);x(5)];
+
+[prog, Lc_1] = prog.newSOSPoly(monomials([l_ccm_states;dfor],0:lc_order),1);
+[prog, Lc_2_4] = prog.newSOSPoly(monomials([l_ccm_states;dfor],0:lc_order),3);
 Lc = [Lc_1; Lc_2_4];
 
 %W uniform bounds
-prog = prog.withPos(w_lower-1);
+prog = prog.withPos(w_lower-0.5);
 prog = prog.withPSD(w_upper*eye(n)-W_upper);
 
 %Condition bound
 prog = prog.withPos(condn*w_lower - w_upper);
 
 %W pos def
-prog = prog.withSOS((dsix'*W*dsix - w_lower*(dsix'*dsix)) - Ll'*box_lim(1:2));
-prog = prog.withSOS(dsix'*(W_upper - W)*dsix - Lu'*box_lim(1:2));
+prog = prog.withSOS((dsix'*W*dsix - w_lower*(dsix'*dsix)) - (Ll'*box_lim(1:2)));
+prog = prog.withSOS(dsix'*(W_upper - W)*dsix - (Lu'*box_lim(1:2)));
 
 %CCM condition
 R_CCM = -(-dW_f_perp + df_perp*W*B_perp + B_perp'*W*df_perp' + 2*lambda*W_perp);
-prog = prog.withSOS((dfor'*R_CCM*dfor - ccm_eps*(dfor'*dfor)) - Lc'*box_lim);
+prog = prog.withSOS((dfor'*R_CCM*dfor - ccm_eps*(dfor'*dfor)) - (Lc'*box_lim));
 
 options = spot_sdp_default_options();
 % options.solveroptions.MSK_IPAR_BI_CLEAN_OPTIMIZER = 'MSK_OPTIMIZER_INTPNT';
@@ -142,7 +138,7 @@ prog = prog.withPos(-free_vars + a);
 prog = prog.withPos(free_vars + a);
 
 try
-    SOS_soln = prog.minimize(trace(W_scale*W_upper) + (1e-3)*sum(a), @spot_mosek, options);
+    SOS_soln = prog.minimize(trace(W_scale*W_upper)+ (1e-4)*sum(a), @spot_mosek, options);
 catch
     %failed
     solved = 1;
@@ -174,7 +170,7 @@ if (return_metric)
         
         W_upper = clean(double(SOS_soln.eval(W_upper)),1e-3);
         
-        pause;
+%         pause;
         
         %% Create monomial functions
         w_poly_fnc = mss2fnc(w_poly,x,randn(length(x),2));

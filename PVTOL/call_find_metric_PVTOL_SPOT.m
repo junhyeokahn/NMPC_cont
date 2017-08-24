@@ -93,9 +93,9 @@ vz_lim = 1.0;
 
 %% Pick a solution
 
-lambda = 0.8283; 
+lambda = 0.83; 
 % condn = 320;
-condn = 132;
+condn = 132.8;
 % lambda = 0.81;
 % condn = 128.55;
 return_metric = 1;
