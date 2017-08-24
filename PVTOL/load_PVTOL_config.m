@@ -6,7 +6,8 @@ m = 2;
 %% Obstacle info
 
 %all obstacles
-obs_loc = [[3;-4],...
+obs_loc = [[-4;-3.5],...
+           [3;-4],...
            [0.7;-3],...
           [-1;-0.5],...
            [2.5;-0.5],...
@@ -15,11 +16,11 @@ obs_loc = [[3;-4],...
            [2.5;3.8],...
            [-2;4]];
 
-obs_rad = [1,0.9,0.8,0.9,1,0.9,0.5,0.6];       
+obs_rad = [0.5,1,0.9,0.8,0.9,1,0.9,0.5,0.6];       
 
 %obstacles considered during MPC iterations (can ignore some) 
-obs_loc_mpc = obs_loc(:,[2,3,4,6,7]);  
-obs_rad_mpc = obs_rad([2;3;4;6;7]);
+obs_loc_mpc = obs_loc(:,[1,3,4,5,7,8]);  
+obs_rad_mpc = obs_rad([1;3;4;5;7;8]);
 
 obs = struct('n_obs',length(obs_rad),'pos',obs_loc,'r',obs_rad);
 obs_mpc = struct('n_obs',length(obs_rad_mpc),'pos',obs_loc_mpc,'r',obs_rad_mpc);
@@ -32,8 +33,7 @@ load 'metric_PVTOL_vectorized.mat';
 W_fnc = struct('W_eval',W_eval,'w_poly_fnc',w_poly_fnc);
 dW_fnc = @(x) {dw_poly_p_fnc(x), dw_poly_vy_fnc(x)};
 
-% sigma_ThBw = 0.3296;
-sigma_ThBw = 0.3185;
+sigma_ThBw = 0.3127;
 lambda =  0.8283;
 ctrl_bound = 6.00;
 n_W = [3,4];
@@ -59,7 +59,7 @@ f_true = f;
 B_true = B;
 B_w_true = B_w;
 
-Q = 0*diag([1;1;0;0;0;0]); R = eye(m); Q_T = diag([1;1;0;0;0;0]);
+Q = 0*diag([1;1;0;0;0;0]); R = eye(m); Q_T = 0*diag([1;1;0;0;0;0]);
    
 %% Bounds
 

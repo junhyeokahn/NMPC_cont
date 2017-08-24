@@ -42,10 +42,10 @@ Tp = 19;
 N_mp = 120;
 dt = 0.001;
 
-T_mpc = 4;
+T_mpc = 3;
 dt_sim = 0.002;
 delta = 1;
-N_mpc = 16;
+N_mpc = 12;
 
 % Setup motion planning problem
 [MP_Prob,L_e_mp,MP_st] = setup_MP(n,m,...
@@ -58,7 +58,10 @@ N_mpc = 16;
 
 load MP_WARM_PVTOL.mat; %existing stored solution
 
-%sol = 0: no guess, sol = 0.5: sampling based guess
+%sol = 0: no guess
+%sol = 0.5: some good guess
+%sol = 1: previously stored full solution
+mp_warm.sol = 1.0;
 
 %mp_warm = struct('Tp',Tp,'shift',0,'sol',0,...
 %                  's_t',MP_st,'state',[],'ctrl',[],'result',[]);
@@ -286,8 +289,9 @@ if (~track_traj)
         Nom_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = u_nom;
         
         %Simulate Optimal
-        w_dist(i,:) = w_max*[cos(x_act(i,3));
-                            -sin(x_act(i,3))]';
+        w_dist(i,:) = w_max*(sin(2*pi*(1/10)*solve_t(i)))*...
+                                [cos(x_act(i,3));
+                                -sin(x_act(i,3))]';
         
         [d_t,d_state] = ode113(@(t,d_state)ode_sim(t,d_state,[solve_t(i):dt:solve_t(i+1)]',u_nom,Aux_ctrl(i,:),...
             f_true,B_true,B_w_true,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);

@@ -19,12 +19,12 @@ if (~track_traj)
         %MPC reference trajectory executed segement
         plot(MPC_state{i_mpc}(1:round(delta/dt)+1,1),MPC_state{i_mpc}(1:round(delta/dt)+1,2),'r--','linewidth',1.5);
         
-%         if i_mpc<T_steps_MPC
-%             num_pnts = 3;
-%         else
-%             num_pnts = 5;
-%         end
-        num_points = delta/dt;
+        if i_mpc<T_steps_MPC
+            num_pnts = 3;
+        else
+            num_pnts = 5;
+        end
+%         num_pnts = delta/dt_sim;
         
         %Outer geodesic ball at start of MPC segment
         E_start = geo_energy(1+(i_mpc-1)*(delta/dt_sim),2);
