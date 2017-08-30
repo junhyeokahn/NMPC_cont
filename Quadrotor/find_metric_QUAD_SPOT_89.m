@@ -1,12 +1,12 @@
-function [solved,w_lower,w_upper] = ...
+function [solved,w_lower,w_upper,W_upper_mat] = ...
     find_metric_QUAD_SPOT_89(n,g,r_lim,p_lim,th_lim_low,th_lim_high,vx_lim,vy_lim,vz_lim,...
             condn,lambda,ccm_eps,return_metric)
 %%
 
 
-W_scale = (1e-1)*diag([0.002*ones(3,1);0.004*ones(3,1);2;2;0.005]);
+% W_scale = (1e-1)*diag([0.001*ones(3,1);0.004*ones(3,1);0.005;0.05;0.05]);
 % W_scale = zeros(9);
-norm_scale = 0.6e-4;
+norm_scale = 1e-6;
 
 % sin_x = @(x) 0.5059*(x/(pi/6));
 % cos_x = @(x) 0.9326 - 0.06699*(2*(x/(pi/6))^2 -1);
@@ -22,16 +22,16 @@ x = msspoly('x',9);
 dnin = msspoly('dnin',9);
 dsix = msspoly('dsix',6);
 
-sin_r = sin_x(x(7));
-cos_r = cos_x(x(7));
-sin_p = sin_x(x(8));
-cos_p = cos_x(x(8));
+sin_r = sin_x(x(8));
+cos_r = cos_x(x(8));
+sin_p = sin_x(x(9));
+cos_p = cos_x(x(9));
 
 %dynamics f
 b_T = [sin_p; -cos_p*sin_r; cos_p*cos_r];
 
 f = [[x(4);x(5);x(6)];
-     [0;0;g] - b_T*x(9);
+     [0;0;g] - b_T*x(7);
      zeros(3,1)]; 
 
 %gradients       
@@ -39,9 +39,9 @@ db_T_q = [0, cos_p;
          -cos_r*cos_p, sin_r*sin_p;
          -sin_r*cos_p,-cos_r*sin_p];
 
-%          x y z vx     vy    vz  r p  t     
+%          x y z vx     vy    vz t r p     
 df_perp      = [zeros(3), eye(3),zeros(3,3);
-                zeros(3,6), -db_T_q(:,1)*x(9), -db_T_q(:,2)*x(9), -b_T];
+                zeros(3,6),-b_T, -db_T_q(:,1)*x(7), -db_T_q(:,2)*x(7)];
             
 B_perp = [eye(6);
           zeros(3,6)];
@@ -78,7 +78,7 @@ W_list{1} = [W_perp_list{1}, W_pc_list{1};
 W = W_list{1}*w_poly(1);
 
 for i = 2:length(w_poly)
-    if size(w_poly_mat,2)>3
+    if size(w_poly_mat,2)>3 %more than (r,p,th)
         if (sum(w_poly_mat(i,end-2:end))>0)
             W_perp_list{i} = zeros(6);
         else
@@ -102,24 +102,22 @@ dW_perp_f = reshape(dW_perp_f,6,6);
 %% Definiteness conditions
 
 %Lagrange multipliers
-box_lim = [r_lim^2-x(7)^2;
-           p_lim^2-x(8)^2;
-           x(9) - th_lim_low;
-           th_lim_high - x(9)];
-%            vx_lim^2-x(4)^2;
-%            vy_lim^2-x(5)^2;
+box_lim = [r_lim^2-x(8)^2;
+           p_lim^2-x(9)^2;
+           x(7) - th_lim_low;
+           th_lim_high - x(7)];
 %            vz_lim^2-x(6)^2];
 
 l_order = w_order;
 l_def_states = w_states;
 n_def_L = length(box_lim);
 
-% [w_def_mon, w_def_mat] = monomials([l_def_states;dnin],0:l_order);
-% w_def_keep = find(sum(w_def_mat(:,4:12),2)==2); %only keep quadratics in dnin
-% w_def_mon = w_def_mon(w_def_keep);
+[w_def_mon, w_def_mat] = monomials([l_def_states;dnin],0:l_order);
+w_def_keep = find(sum(w_def_mat(:,length(l_def_states)+1:end),2)==2); %only keep quadratics in dnin
+w_def_mon = w_def_mon(w_def_keep);
 
-[prog, Ll] = prog.newSOSPoly(monomials(l_def_states,0:l_order),n_def_L);
-[prog, Lu] = prog.newSOSPoly(monomials(l_def_states,0:l_order),n_def_L);
+[prog, Ll] = prog.newSOSPoly(w_def_mon,n_def_L);
+[prog, Lu] = prog.newSOSPoly(w_def_mon,n_def_L);
 
 l_ccm_states = w_states;
 lc_order = l_order;
@@ -142,11 +140,11 @@ prog = prog.withPos(w_lower-1);
 prog = prog.withPSD(w_upper*eye(n)-W_upper);
 
 %Condition bound
-prog = prog.withPos(condn*w_lower - w_upper);
+prog = prog.withPos(condn*w_lower - trace(W_upper));
 
 %W pos def
-prog = prog.withSOS((dnin'*W*dnin - w_lower*(dnin'*dnin)) - (Ll'*box_lim(1:n_def_L))*(dnin'*dnin));
-prog = prog.withSOS(dnin'*(W_upper - W)*dnin - (Lu'*box_lim(1:n_def_L))*(dnin'*dnin));
+prog = prog.withSOS((dnin'*W*dnin - w_lower*(dnin'*dnin)) - (Ll'*box_lim(1:n_def_L)));
+prog = prog.withSOS(dnin'*(W_upper - W)*dnin - (Lu'*box_lim(1:n_def_L)));
 
 %CCM condition
 R_CCM = -(-dW_perp_f + df_perp*W*B_perp + B_perp'*W*df_perp' + 2*lambda*W_perp);
@@ -156,19 +154,20 @@ options = spot_sdp_default_options();
 options.verbose = return_metric;
 
 %Norm constraint
-free_vars = [prog.coneVar; prog.freeVar];
+free_vars = [prog.coneVar(2:end); prog.freeVar];
 len = length(free_vars);
 [prog, a] = prog.newPos(len);
 prog = prog.withPos(-free_vars + a);
 prog = prog.withPos(free_vars + a);
 
 try
-    SOS_soln = prog.minimize(trace(W_scale*W_upper) + norm_scale*sum(a), @spot_mosek, options);
+    SOS_soln = prog.minimize(norm_scale*sum(a), @spot_mosek, options);
 catch
     %failed
     solved = 1;
     w_lower = 0;
     w_upper = 0;
+    W_upper_mat = zeros(n);
     return;
 end
 
@@ -179,6 +178,7 @@ catch
     solved = 1;
     w_lower = 0;
     w_upper = 0;
+    W_upper_mat = zeros(n);
     return;
 end
 
@@ -187,9 +187,11 @@ end
 if (solved == 0)
     w_lower = double(SOS_soln.eval(w_lower));
     w_upper = double(SOS_soln.eval(w_upper));
+    W_upper_mat = clean(double(SOS_soln.eval(W_upper)),1e-4);
 else
     w_lower = 0;
     w_upper = 0; 
+    W_upper_mat = zeros(n);
     return;
 end
 
@@ -210,14 +212,12 @@ if (return_metric)
         
         fprintf('%d non-zero monomials\n',length(w_poly));
         
-        dw_poly_r = diff(w_poly,x(7));
-        dw_poly_p = diff(w_poly,x(8));
-        dw_poly_th = diff(w_poly,x(9));
+        dw_poly_th = diff(w_poly,x(7));
+        dw_poly_r = diff(w_poly,x(8));
+        dw_poly_p = diff(w_poly,x(9));
         dw_poly_vx = diff(w_poly,x(4));
         dw_poly_vy = diff(w_poly,x(5));
         dw_poly_vz = diff(w_poly,x(6));
-        
-        W_upper_mat = clean(double(SOS_soln.eval(W_upper)),1e-4);
         
 %         pause;
         

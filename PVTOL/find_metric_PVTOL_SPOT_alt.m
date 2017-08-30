@@ -6,6 +6,7 @@ function [solved,w_lower,w_upper] = ...
 
 % W_scale = diag([0.02;0.04;0.06;0.005;0.01;0.008]);
 W_scale = diag([0.001;0.02;0.0367;0.005;0.001;0.002]);
+norm_scale = 1e-4;
 
 % sin_x = @(x) 0.05059*(x/(pi/6));
 % cos_x = @(x) 0.9326 - 0.06699*(2*(x/(pi/6))^2 -1);
@@ -112,11 +113,12 @@ ccm_def_mon = ccm_def_mon(ccm_def_keep);
 [prog, Lc] = prog.newSOSPoly(ccm_def_mon,4);
 
 %W uniform bounds
-prog = prog.withPos(w_lower-0.5);
+prog = prog.withPos(w_lower-1);
 prog = prog.withPSD(w_upper*eye(n)-W_upper);
 
 %Condition bound
-prog = prog.withPos(condn*w_lower - w_upper);
+% prog = prog.withPos(condn*w_lower - w_upper);
+prog = prog.withPos(condn*w_lower - trace(W_upper));
 
 %W pos def
 prog = prog.withSOS((dsix'*W*dsix - w_lower*(dsix'*dsix)) - (Ll'*box_lim(1:2)));
@@ -132,14 +134,14 @@ options = spot_sdp_default_options();
 options.verbose = return_metric;
 
 %Norm constraint
-free_vars = [prog.coneVar; prog.freeVar];
+free_vars = [prog.coneVar(2:end); prog.freeVar];
 len = length(free_vars);
 [prog, a] = prog.newPos(len);
 prog = prog.withPos(-free_vars + a);
 prog = prog.withPos(free_vars + a);
 
 try
-    SOS_soln = prog.minimize(trace(W_scale*W_upper)+ (1e-4)*sum(a), @spot_mosek, options);
+    SOS_soln = prog.minimize(norm_scale*sum(a), @spot_mosek, options);
 catch
     %failed
     solved = 1;
