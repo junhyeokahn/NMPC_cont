@@ -6,9 +6,6 @@ close all;
 
 figure(1)
 hold on
-%Nominal motion plan
-% plot(MP_state(:,1),MP_state(:,2),'g--','linewidth',1);
-
 %Plot obstacles
 for i_ob = 1:obs.n_obs
     Ellipse_plot(eye(2)*(1/(obs.r(i_ob)+len)^2),obs.pos(:,i_ob), 25,'k',0.8);
@@ -67,8 +64,11 @@ else
     end
 end
 
+%Nominal motion plan
+plot(MP_state(:,1),MP_state(:,2),'w--','linewidth',1.5);
+
 %Plot actual trajectory
-plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
+% plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
 % plot(x_act(1:round(delta/dt_sim):end,1),x_act(1:round(delta/dt_sim):end,2),'ko','markersize',7,'markerfacecolor','k');
 
 %Final condition
