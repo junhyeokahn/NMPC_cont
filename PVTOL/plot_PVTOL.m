@@ -11,24 +11,24 @@ hold on
 
 %Plot obstacles
 for i_ob = 1:obs.n_obs
-    Ellipse_plot(eye(2)*(1/(obs.r(i_ob))^2),obs.pos(:,i_ob), 25,'k',0.8);
+    Ellipse_plot(eye(2)*(1/(obs.r(i_ob)+len)^2),obs.pos(:,i_ob), 25,'k',0.8);
 end
 
-plot_time_var = 0;
+plot_time_var = 1;
 ellipse_color = [188,216,240]/255;
-ellipse_alpha = 0.1;
-plot_quivers = 1;
+ellipse_alpha = 0.15;
+plot_quivers = 0;
 
 if (~track_traj)
     for i_mpc = 1:T_steps_MPC
         %MPC reference trajectory executed segement
         
-        num_pnts = delta/(10*dt_sim);
+        num_pnts = delta/(20*dt_sim);
         
         %Outer geodesic ball at start of MPC segment
         E_start = geo_energy(1+(i_mpc-1)*(delta/dt_sim),2);
         if plot_time_var
-            Ellipse_plot(M_ccm_pos_unscaled*(1/E_start),MPC_state{i_mpc}(1,1:2)',30,ellipse_color,ellipse_alpha);
+            Ellipse_plot(M_ccm_pos_unscaled*(1/E_start),MPC_state{i_mpc}(1,1:2)',30,'g',ellipse_alpha);
         else
             Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1,1:2)',30,ellipse_color,ellipse_alpha);
         end
@@ -38,7 +38,7 @@ if (~track_traj)
         for j = 2:length(t_mpc_span)-1
             E_j = (sqrt(E_start)*exp(-lambda*t_mpc_span(j)) + d_bar*(1-exp(-lambda*t_mpc_span(j))))^2;
             if plot_time_var
-                Ellipse_plot(M_ccm_pos_unscaled*(1/E_j),MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,ellipse_color,ellipse_alpha);
+                Ellipse_plot(M_ccm_pos_unscaled*(1/E_j),MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,[0,1,0]+(j/length(t_mpc_span))*[0,-1,1],ellipse_alpha);
             else
                 Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,ellipse_color,ellipse_alpha);
             end
@@ -51,7 +51,7 @@ if (~track_traj)
         %Final outer geodesic ball
         E_end = (sqrt(E_start)*exp(-lambda*delta) + d_bar*(1-exp(-lambda*delta)))^2;
         if plot_time_var
-            Ellipse_plot(M_ccm_pos_unscaled*(1/E_end),MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,ellipse_color,ellipse_alpha);
+            Ellipse_plot(M_ccm_pos_unscaled*(1/E_end),MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'r',ellipse_alpha);
         else
             Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,ellipse_color,ellipse_alpha);
         end

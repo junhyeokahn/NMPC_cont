@@ -42,10 +42,10 @@ Tp = 19;
 N_mp = 120;
 dt = 0.001;
 
-T_mpc = 2;
+T_mpc = 4;
 dt_sim = 0.002;
-delta = 1;
-N_mpc = 8;
+delta = 1.5;
+N_mpc = 14;
 
 % Setup motion planning problem
 [MP_Prob,L_e_mp,MP_st] = setup_MP(n,m,...
@@ -226,11 +226,11 @@ if (~track_traj)
                 n,geodesic_N,state_0_MPC,state,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
             geo_energy(i,1) = J_opt;
             
-%             if (i>1)
-%                 E_bnd = J_opt;
-%             else
+            if (i>1)
+                E_bnd = J_opt;
+            else
                 E_bnd = (d_bar)^2;
-%             end
+            end
             
             %Now solve MPC problem given current tube bound
             mpc_warm.solve_t = solve_t(i);
