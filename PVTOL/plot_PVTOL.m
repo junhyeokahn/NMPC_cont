@@ -173,4 +173,4 @@ legend('Optimal re-join time','Minimum re-join time');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 
-save('quad_sim_static.mat');
+save('quad_sim_dynamic.mat');

@@ -45,7 +45,7 @@ dt = 0.001;
 T_mpc = 4;
 dt_sim = 0.002;
 delta = 1.5;
-N_mpc = 14;
+N_mpc = 18;
 
 % Setup motion planning problem
 [MP_Prob,L_e_mp,MP_st] = setup_MP(n,m,...

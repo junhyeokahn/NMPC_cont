@@ -70,7 +70,7 @@ xu_U = [kron(ones(N+1,1),x_U);
         kron(ones(N+1,1),u_U);
         MP_t(end)]; 
        
-gamma = 4;    
+gamma = 3;    
 MPC_cost = @(xu) (Tp/2)*(xu(1:(N+1)*(n+m))-xu_eq)'*F*(xu(1:(N+1)*(n+m))-xu_eq)-gamma*xu(end);
 MPC_grad = @(xu) [Tp*F*(xu(1:(N+1)*(n+m))-xu_eq);-gamma];
 MPC_hess = @(xu) blkdiag(Tp*F,0);
