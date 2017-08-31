@@ -93,10 +93,10 @@ vz_lim = 1.0;
 
 %% Pick a solution
 
-% lambda = 0.83; 
-% condn = 132.8;
-lambda = 1.2;
-condn = 675;
+lambda = 0.83; 
+condn = 132.8;
+% lambda = 1.2;
+% condn = 675;
 return_metric = 1;
 
 [sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT_alt(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
@@ -185,7 +185,7 @@ for i = 1:length(p_range)
 end
 d_bar = max(sigma_ThBw(:))/lambda;
 disp('d_bar'); disp(d_bar);
-disp('euc_bound'); disp(d_bar*sqrt(w_upper));
+% disp('euc_bound'); disp(d_bar*sqrt(w_upper));
 disp('Control:'); disp(max(d_bar*delta_u(:)));
 disp('W:'); disp(min(min(eig_W(:,:,1))));
 disp(max(max(eig_W(:,:,2))));

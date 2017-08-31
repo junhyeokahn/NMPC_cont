@@ -7,41 +7,56 @@ close all;
 figure(1)
 hold on
 %Nominal motion plan
-plot(MP_state(:,1),MP_state(:,2),'g--','linewidth',1);
+% plot(MP_state(:,1),MP_state(:,2),'g--','linewidth',1);
 
 %Plot obstacles
 for i_ob = 1:obs.n_obs
-    Ellipse_plot(eye(2)*(1/(obs.r(i_ob)+len)^2),obs.pos(:,i_ob), 25,'r',0.7);
+    Ellipse_plot(eye(2)*(1/(obs.r(i_ob))^2),obs.pos(:,i_ob), 25,'k',0.8);
 end
+
+plot_time_var = 0;
+ellipse_color = [188,216,240]/255;
+ellipse_alpha = 0.1;
+plot_quivers = 1;
 
 if (~track_traj)
     for i_mpc = 1:T_steps_MPC
         %MPC reference trajectory executed segement
-        plot(MPC_state{i_mpc}(1:round(delta/dt)+1,1),MPC_state{i_mpc}(1:round(delta/dt)+1,2),'r--','linewidth',1.5);
         
-%         if i_mpc<T_steps_MPC
-%             num_pnts = 3;
-%         else
-%             num_pnts = 5;
-%         end
-        num_pnts = delta/(4*dt_sim);
+        num_pnts = delta/(10*dt_sim);
         
         %Outer geodesic ball at start of MPC segment
         E_start = geo_energy(1+(i_mpc-1)*(delta/dt_sim),2);
-        Ellipse_plot(M_ccm_pos_unscaled*(1/E_start),MPC_state{i_mpc}(1,1:2)',30,'g',0.2);
-%         Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1,1:2)',30,'k');
+        if plot_time_var
+            Ellipse_plot(M_ccm_pos_unscaled*(1/E_start),MPC_state{i_mpc}(1,1:2)',30,ellipse_color,ellipse_alpha);
+        else
+            Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1,1:2)',30,ellipse_color,ellipse_alpha);
+        end
         
         t_mpc_span = linspace(0,delta,num_pnts);
         %Evolution of outer geodesic ball over MPC segment
         for j = 2:length(t_mpc_span)-1
             E_j = (sqrt(E_start)*exp(-lambda*t_mpc_span(j)) + d_bar*(1-exp(-lambda*t_mpc_span(j))))^2;
-            Ellipse_plot(M_ccm_pos_unscaled*(1/E_j),MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,'b',0.2);
-%             Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,'k');
+            if plot_time_var
+                Ellipse_plot(M_ccm_pos_unscaled*(1/E_j),MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,ellipse_color,ellipse_alpha);
+            else
+                Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(t_mpc_span(j)/dt)+1,1:2)',30,ellipse_color,ellipse_alpha);
+            end
+            if (plot_quivers)
+            quiver(x_act(round(((i_mpc-1)*delta+t_mpc_span(j))/dt)+1,1),x_act(round(((i_mpc-1)*delta+t_mpc_span(j))/dt)+1,2),...
+                  (MPC_ctrl{i_mpc}(round(t_mpc_span(j)/dt)+1,1)+MPC_ctrl{i_mpc}(round(t_mpc_span(j)/dt)+1,2))*sin(x_act(round(((i_mpc-1)*delta+t_mpc_span(j))/dt)+1,3)),...
+                  (MPC_ctrl{i_mpc}(round(t_mpc_span(j)/dt)+1,1)+MPC_ctrl{i_mpc}(round(t_mpc_span(j)/dt)+1,2))*cos(x_act(round(((i_mpc-1)*delta+t_mpc_span(j))/dt)+1,3)),0.5);
+            end
         end
         %Final outer geodesic ball
         E_end = (sqrt(E_start)*exp(-lambda*delta) + d_bar*(1-exp(-lambda*delta)))^2;
-        Ellipse_plot(M_ccm_pos_unscaled*(1/E_end),MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'r',0.2);
-%         Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,'k');
+        if plot_time_var
+            Ellipse_plot(M_ccm_pos_unscaled*(1/E_end),MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,ellipse_color,ellipse_alpha);
+        else
+            Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(round(delta/dt)+1,1:2)',30,ellipse_color,ellipse_alpha);
+        end
+        
+        plot(MPC_state{i_mpc}(1:round(delta/dt)+1,1),MPC_state{i_mpc}(1:round(delta/dt)+1,2),'r--','linewidth',1.5);
     end
 else
     d0 = sqrt(geo_energy(1,1));
@@ -54,7 +69,7 @@ end
 
 %Plot actual trajectory
 plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
-plot(x_act(1:round(delta/dt_sim):end,1),x_act(1:round(delta/dt_sim):end,2),'ko','markersize',7,'markerfacecolor','k');
+% plot(x_act(1:round(delta/dt_sim):end,1),x_act(1:round(delta/dt_sim):end,2),'ko','markersize',7,'markerfacecolor','k');
 
 %Final condition
 Ellipse_plot(P(1:2,1:2)*(1/(alpha)), x_eq(1:2),30,'k');

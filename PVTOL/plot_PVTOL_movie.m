@@ -2,6 +2,8 @@
 
 t_step = 0.05/dt;
 
+plot_time_var = 0;
+
 [U_pos,S_pos,V_pos] = svd(M_ccm_pos);
 S_new = (sqrt(S_pos\eye(2)) + len*eye(2))^2\eye(2);
 
@@ -38,7 +40,7 @@ end
 
 %obstacles
 for i = 1:obs.n_obs
-    Ellipse_plot(eye(2)*(1/(obs.r(i))^2),obs.pos(:,i),25,'k',1);
+    Ellipse_plot(eye(2)*(1/(obs.r(i)+len)^2),obs.pos(:,i),25,'k',1);
 end
 
 %MPC
@@ -49,11 +51,19 @@ E_bnd = (sqrt(E_start)*exp(-lambda*t_vec) + d_bar*(1-exp(-lambda*t_vec))).^2;
 
 %Online RCI tube on MPC traj
 S_new = (sqrt(E_bnd(1)*(obs_mpc.S\eye(2))) + 0*eye(2))^2\eye(2);
-h_rci = Ellipse_plot(obs_mpc.U*S_new*obs_mpc.V',MPC_state{1}(1,1:2)',25,'b',0.05);
+if plot_time_var
+    h_rci = Ellipse_plot(obs_mpc.U*S_new*obs_mpc.V',MPC_state{1}(1,1:2)',25,'b',0.05);
+else
+    h_rci = Ellipse_plot(M_ccm_pos,MPC_state{1}(1,1:2)',25,'b',0.05);
+end
 h_rci = repmat(h_rci,length(t_vec),1);
 for j = 2:length(t_vec)
-    S_new = (sqrt(E_bnd(j)*(obs_mpc.S\eye(2))) + 0*eye(2))^2\eye(2);
-    h_rci(j) = Ellipse_plot(obs_mpc.U*S_new*obs_mpc.V',MPC_state{1}(1+(j-1)*(0.1/dt),1:2)',25,'b',0.1);
+    if plot_time_var
+        S_new = (sqrt(E_bnd(j)*(obs_mpc.S\eye(2))) + 0*eye(2))^2\eye(2);
+        h_rci(j) = Ellipse_plot(obs_mpc.U*S_new*obs_mpc.V',MPC_state{1}(1+(j-1)*(0.1/dt),1:2)',25,'b',0.1);
+    else
+        h_rci(j) = Ellipse_plot(M_ccm_pos,MPC_state{1}(1+(j-1)*(0.1/dt),1:2)',25,'b',0.1);
+    end
 end
 
 % Ellipse_plot(M_ccm_pos,x_eq(1:2),25,'r');
@@ -89,7 +99,7 @@ grid off
 axis manual;
 
 %% Setup Movie
-record_vid = 1;
+record_vid = 0;
 
 if (record_vid)
     writerObj = VideoWriter('PVTOL_sim.mp4');
@@ -126,8 +136,12 @@ for i = t_step:t_step:length(solve_t)
         E_bnd = (sqrt(E_start)*exp(-lambda*t_vec) + d_bar*(1-exp(-lambda*t_vec))).^2;
         for j = 1:length(t_vec)
             delete(h_rci(j));
-            S_new = (sqrt(E_bnd(j)*(obs_mpc.S\eye(2))) + 0*eye(2))^2\eye(2);
-            h_rci(j) = Ellipse_plot(obs_mpc.U*S_new*obs_mpc.V',MPC_state{i_mpc}(1+(j-1)*(0.1/dt),1:2)',25,'b',0.05);
+            if plot_time_var
+                S_new = (sqrt(E_bnd(j)*(obs_mpc.S\eye(2))) + 0*eye(2))^2\eye(2);
+                h_rci(j) = Ellipse_plot(obs_mpc.U*S_new*obs_mpc.V',MPC_state{i_mpc}(1+(j-1)*(0.1/dt),1:2)',25,'b',0.05);
+            else
+                h_rci(j) = Ellipse_plot(M_ccm_pos,MPC_state{i_mpc}(1+(j-1)*(0.1/dt),1:2)',25,'b',0.05);
+            end
         end
 %         pause(0.25);
     end      

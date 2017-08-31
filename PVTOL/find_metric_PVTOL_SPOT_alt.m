@@ -118,7 +118,7 @@ prog = prog.withPSD(w_upper*eye(n)-W_upper);
 
 %Condition bound
 % prog = prog.withPos(condn*w_lower - w_upper);
-prog = prog.withPos(condn*w_lower - trace(W_upper));
+prog = prog.withPos(condn*w_lower - w_upper);
 
 %W pos def
 prog = prog.withSOS((dsix'*W*dsix - w_lower*(dsix'*dsix)) - (Ll'*box_lim(1:2)));
@@ -141,7 +141,7 @@ prog = prog.withPos(-free_vars + a);
 prog = prog.withPos(free_vars + a);
 
 try
-    SOS_soln = prog.minimize(norm_scale*sum(a), @spot_mosek, options);
+    SOS_soln = prog.minimize(trace(W_scale*W_upper) + norm_scale*sum(a), @spot_mosek, options);
 catch
     %failed
     solved = 1;
