@@ -51,16 +51,16 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 figure()
 subplot(3,1,1)
-plot(t, Nom_ctrl(:,1),'--','linewidth',2); hold on
-plot(t ,True_ctrl(:,1),'-','linewidth',2);
+plot(t, Nom_ctrl(:,2),'--','linewidth',2); hold on
+plot(t ,True_ctrl(:,2),'-','linewidth',2);
 xlabel('Time [s]');
 ylabel('$\dot{\phi}$ [rad/s]','interpreter','latex');
 grid on
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 subplot(3,1,2)
-plot(t, Nom_ctrl(:,2),'--','linewidth',2); hold on
-plot(t, True_ctrl(:,2),'-','linewidth',2);
+plot(t, Nom_ctrl(:,3),'--','linewidth',2); hold on
+plot(t, True_ctrl(:,3),'-','linewidth',2);
 xlabel('Time [s]');
 ylabel('$\dot{\theta}$ [rad/s]','interpreter','latex');
 grid on
@@ -77,7 +77,7 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 %% Rotation angles
 figure()
 subplot(2,1,1)
-plot(t, MP_state(:,7)*(180/pi),'--','linewidth',2); hold on
+plot(t, MP_state(:,8)*(180/pi),'--','linewidth',2); hold on
 plot(t, x_act(:,7)*(180/pi),'-','linewidth',2); hold on
 xlabel('Time [s]');
 ylabel('$\phi$ [deg]','interpreter','latex');
@@ -85,7 +85,7 @@ grid on
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 subplot(2,1,2)
-plot(t, MP_state(:,8)*(180/pi),'--','linewidth',2); hold on
+plot(t, MP_state(:,9)*(180/pi),'--','linewidth',2); hold on
 plot(t, x_act(:,8)*(180/pi),'-','linewidth',2); hold on
 xlabel('Time [s]');
 ylabel('$\theta$ [deg]','interpreter','latex');

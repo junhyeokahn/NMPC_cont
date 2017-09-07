@@ -1,6 +1,6 @@
 % function plot_quad_movie(t,x_act,MPC_state,M_ccm_pos,x_eq,obs,t_step)
 
-t_step = 0.05/dt;
+t_step = 0.1/dt;
 
 plot_time_var = 0;
 
@@ -40,7 +40,7 @@ end
 
 %obstacles
 for i = 1:obs.n_obs
-    Ellipse_plot(eye(2)*(1/(obs.r(i)+len)^2),obs.pos(:,i),25,'k',1);
+    Ellipse_plot(eye(2)*(1/(obs.r(i))^2),obs.pos(:,i),25,'k',1);
 end
 
 %MPC

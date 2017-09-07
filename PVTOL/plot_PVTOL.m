@@ -68,7 +68,7 @@ end
 plot(MP_state(:,1),MP_state(:,2),'w--','linewidth',1.5);
 
 %Plot actual trajectory
-% plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
+plot(x_act(:,1),x_act(:,2),'k-','linewidth',2);
 % plot(x_act(1:round(delta/dt_sim):end,1),x_act(1:round(delta/dt_sim):end,2),'ko','markersize',7,'markerfacecolor','k');
 
 %Final condition

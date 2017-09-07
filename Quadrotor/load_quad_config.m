@@ -48,7 +48,7 @@ load(poly_file);
 load ('metric_QUAD_vectorized.mat');
 
 W_fnc = struct('W_eval',W_eval,'w_poly_fnc',w_poly_fnc);
-dW_fnc = @(x) {dw_poly_r_fnc(x), dw_poly_p_fnc(x), dw_poly_th_fnc(x)};
+dW_fnc = @(x) {dw_poly_th_fnc(x), dw_poly_r_fnc(x), dw_poly_p_fnc(x)};
 n_W = [7,8,9];
 
 sigma_ThBw = 0.684;

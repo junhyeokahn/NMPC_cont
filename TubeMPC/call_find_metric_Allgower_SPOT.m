@@ -5,7 +5,7 @@ yalmip('clear');
 
 x1_lim = 5;
 x2_lim = 5;
-ccm_eps = 0;
+ccm_eps = 0.01;
 
 %% Define problem & combine line + bisection searches
 
@@ -89,10 +89,13 @@ ccm_eps = 0;
 %% Pick a solution
 
 lambda = 1.742857142857143; 
-% condn = 1.6344;
-% return_metric = 1;
-% 
-% [sos_prob, w_lower, w_upper] = find_metric_Allgower_SPOT(x1_lim, x2_lim,condn, lambda, ccm_eps,return_metric);
+condn = 1.6344;
+
+% lambda = 1.8;
+% condn = 3.1;
+return_metric = 1;
+
+[sos_prob, w_lower, w_upper] = find_metric_Allgower_SPOT(x1_lim, x2_lim,condn, lambda, ccm_eps,return_metric);
 
 %% Compute control bounds using optimal metric (W = const matrix)
 load('metric_Allgower.mat');
@@ -148,7 +151,11 @@ disp('d_bar:'); disp(d_bar);
 disp('control:'); disp(max(delta_u(:))*d_bar);
 disp('CCM:'); disp(min(eig_CCM(:)));
 
-M = W_eval(1)\eye(2); %W= const. otherwise - replace with W_upper
+if length(w_poly_fnc([1;1])) == 1
+    M = W_eval(w_poly_fnc([1;1]))\eye(2); %W= const. otherwise - replace with W_upper
+else
+    M = W_upper\eye(2);
+end
 
 %Compare RCI sets
 P_rci = diag([39.0251, 486.0402]);
