@@ -47,7 +47,7 @@ x_init = [state_nom(1,:)'+[0.01*randn(6,1);zeros(3,1)];
          zeros(3,1);
           thrust_init];
 
-xc_init = [x_init(1:8); thrust_init];
+xc_init = [x_init(1:6); thrust_init; x_init(7:8)];
 
 %% Test Geodesic numerics
 

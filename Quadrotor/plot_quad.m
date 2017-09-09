@@ -40,7 +40,7 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 figure()
 hold on
 % plot(t,thrust_nom,'r-','linewidth',1.5);
-plot(t,MP_state(:,9)*mq,'b-','linewidth',2);
+plot(t,MP_state(:,7)*mq,'b-','linewidth',2);
 plot(t,x_act(:,13)*mq,'k-','linewidth',2);
 xlabel('Time [s]');
 ylabel('Thrust [N]');

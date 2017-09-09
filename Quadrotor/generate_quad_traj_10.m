@@ -1,6 +1,6 @@
 function [t_vec,x_nom, u_nom, th_nom, accel] = generate_quad_traj_10(dt,Jq,mq,g,poly_file)
 
-sim_case = 'polyspline';
+sim_case = 'hover';
 
 switch (sim_case)
     case 'fig8'       
