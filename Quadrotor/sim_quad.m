@@ -28,13 +28,15 @@ keyboard;
 
 %% Setup geodesic solver
 
-geodesic_N = 2;
-[geo_Prob,geo_Ke,T_e,T_dot_e,geo_Aeq] = ...
+if (~pullback)
+    geodesic_N = 2;
+    [geo_Prob,geo_Ke,T_e,T_dot_e,geo_Aeq] = ...
         setup_geodesic_calc(n,geodesic_N,W_fnc,dW_fnc,n_W);
     
-geo_solver = 'npsol';    
+    geo_solver = 'npsol';
     
-geo_warm = struct('sol',0,'result',[]);
+    geo_warm = struct('sol',0,'result',[]);
+end
 
 %% Setup simulation
 
@@ -51,26 +53,30 @@ xc_init = [x_init(1:6); thrust_init; x_init(7:8)];
 
 %% Test Geodesic numerics
 
-tic
-[Xc, Xc_dot,J_opt,converged_geo,geo_result,geo_Prob] = ...
-    compute_geodesic_tom(geo_Prob,n,geodesic_N,...
-            MP_state(1,:)',xc_init,...
-            T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
-toc;
-disp('Geo dist: ');disp(converged_geo);
-disp(sqrt(J_opt));
-geo_Prob.CHECK = 1;
-geo_warm.sol = 1;
-geo_warm.result = geo_result;
+if (~pullback)
+    tic
+    [Xc, Xc_dot,J_opt,converged_geo,geo_result,geo_Prob] = ...
+        compute_geodesic_tom(geo_Prob,n,geodesic_N,...
+        MP_state(1,:)',xc_init,...
+        T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
+    toc;
+    disp('Geo dist: ');disp(converged_geo);
+    disp(sqrt(J_opt));
+    geo_Prob.CHECK = 1;
+    geo_warm.sol = 1;
+    geo_warm.result = geo_result;
+end
 
 %% Setup Auxiliary controller
 
-tic
-[ctrl_opt,converged_aux] = compute_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
-                            W_fnc,f_ctrl,B_ctrl,MP_ctrl(1,1:3)',lambda);
-toc;
-disp('opt_control:');disp(converged_aux);
-disp(ctrl_opt);
+if (~pullback)
+    tic
+    [ctrl_opt,converged_aux] = compute_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
+        W_fnc,f_ctrl,B_ctrl,MP_ctrl(1,1:3)',lambda);
+    toc;
+    disp('opt_control:');disp(converged_aux);
+    disp(ctrl_opt);
+end
 
 %% Setup nonlinear sim
 
@@ -121,29 +127,33 @@ for i = 1:T_steps
     uc_nom = MP_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:);
     
     %Optimal Control
-    tic
-    [Xc, Xc_dot,J_opt,opt_solved(i,1),geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,...
-        n,geodesic_N,xc_nom',state_xc,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
-    ctrl_solve_time(i,1) = toc;
-    
-    Geod{i} = Xc';
-    geo_energy(i,1) = J_opt;
-    geo_warm.result = geo_result;
-    geo_warm.sol = 1;
-    
-    tic
-    [Aux_ctrl(i,1:3),opt_solved(i,2)] = compute_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
-        W_fnc,f_ctrl,B_ctrl,uc_nom(1,1:3)',lambda);
-    Aux_ctrl(i,4) = 2*lambda*(yaw_nom-yaw);
-    ctrl_solve_time(i,2) = toc;
+    if (~pullback)
+        tic
+        [Xc, Xc_dot,J_opt,opt_solved(i,1),geo_result,geo_Prob] = compute_geodesic_tom(geo_Prob,...
+            n,geodesic_N,xc_nom',state_xc,T_e,T_dot_e,geo_Aeq,geo_warm,geo_solver);
+        ctrl_solve_time(i,1) = toc;
+        
+        Geod{i} = Xc';
+        geo_energy(i,1) = J_opt;
+        geo_warm.result = geo_result;
+        geo_warm.sol = 1;
+        
+        tic
+        [Aux_ctrl(i,1:3),opt_solved(i,2)] = compute_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
+            W_fnc,f_ctrl,B_ctrl,uc_nom(1,1:3)',lambda);
+        Aux_ctrl(i,4) = 2*lambda*(yaw_nom-yaw);
+        ctrl_solve_time(i,2) = toc;
+    else
+        [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,1:3)', state_xc, yaw);       
+    end
     
     True_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = uc_nom+kron(ones((dt_sim/dt)+1,1),Aux_ctrl(i,:));
     Nom_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = uc_nom;
     
     %Disturbance model
-    w_dist(i,:) = w_max*(1/sqrt(3))*[1;1;1]';
+    w_dist(i,:) = 0*w_max*(1/sqrt(3))*[1;1;1]';
     
-    [d_t,d_state] = ode113(@(t,d_state)quad_ode(t,d_state,[solve_t(i):dt:solve_t(i+1)]',uc_nom,Aux_ctrl(i,:),...
+    [d_t,d_state] = ode113(@(t,d_state)quad_ode(t,d_state,[solve_t(i):dt:solve_t(i+1)]',uc_nom,Aux_ctrl(i,:),state_xc(7),...
         f,B,B_w,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);
     
     state = d_state(end,:)';

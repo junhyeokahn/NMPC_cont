@@ -100,11 +100,11 @@ else
     %% Pick a solution
     
     lambda = 0.84;
-    condn = 109;
-    return_metric = 1;
-    
-    [sos_prob,w_lower,w_upper,~] = find_metric_QUAD_SPOT_89(n,g,r_lim,p_lim,th_lim_low,th_lim_high,vx_lim,vy_lim,vz_lim,...
-        condn,lambda,ccm_eps,return_metric);
+%     condn = 109;
+%     return_metric = 1;
+%     
+%     [sos_prob,w_lower,w_upper,~] = find_metric_QUAD_SPOT_89(n,g,r_lim,p_lim,th_lim_low,th_lim_high,vx_lim,vy_lim,vz_lim,...
+%         condn,lambda,ccm_eps,return_metric);
     
     %% Compute aux control bound
     load 'metric_QUAD_vectorized.mat';
@@ -186,7 +186,7 @@ else
     %         end
     %     end
     
-    d_bar = max(sigma_ThBw(:))/lambda;
+    d_bar = 0.1*max(sigma_ThBw(:))/lambda;
     disp('d_bar'); disp(d_bar);
     disp('W:'); disp(min(min(min(eig_W(:,:,:,1)))));
     disp(max(max(max(eig_W(:,:,:,2)))));

@@ -1,4 +1,4 @@
-function dx_dot = quad_ode(t,x,t_span,u_nom,k,f,B,B_w,w)
+function dx_dot = quad_ode(t,x,t_span,u_nom,k,th,f,B,B_w,w)
 
 global kp_om;
 
@@ -11,6 +11,6 @@ M = kp_om*(om_des - x(10:12));
 
 u = [uc(1);M];
 
-dx_dot = f(x) + B*u + B_w*w;
+dx_dot = f(x,th) + B*u + B_w*w;
 
 end

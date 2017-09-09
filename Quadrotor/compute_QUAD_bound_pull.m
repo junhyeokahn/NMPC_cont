@@ -23,7 +23,7 @@ b_T = [sin_p; -cos_p*sin_r; cos_p*cos_r];
 db_T_q = [0, cos_p;
          -cos_r*cos_p, sin_r*sin_p;
          -sin_r*cos_p,-cos_r*sin_p];
-Phi =  blkdiag(eye(3),eye(3),-[db_T_q*th, b_T]);
+Phi =  blkdiag(eye(3),eye(3),-[b_T, db_T_q*th]);
 
 M = Phi'*M_xi*Phi;
 
@@ -48,12 +48,15 @@ box_lim = [r_lim^2-r^2;
            th - th_lim_low;
            th_lim_high - th];
        
-l_order = 2;
-l_def_states = [r;p;th;dnin]';
+l_order = 4;
+l_def_states = [r;p;th];
+n_def_L = length(box_lim);
 
-[prog, Ll_rp] = prog.newSOSPoly(monomials(l_def_states,0:l_order+2),2);       
-[prog, Ll_th] = prog.newSOSPoly(monomials(l_def_states,0:l_order),2);       
-Ll = [Ll_rp; Ll_th];
+[m_def_mon, m_def_mat] = monomials([l_def_states;dnin],0:l_order);
+m_def_keep = find(sum(m_def_mat(:,length(l_def_states)+1:end),2)==2); %only keep quadratics in dnin
+m_def_mon = m_def_mon(m_def_keep);
+
+[prog, Ll] = prog.newSOSPoly(m_def_mon,n_def_L);
 
 %Bounds
 prog = prog.withPSD(M_lower_pull - m_lower*eye(9));
@@ -62,13 +65,13 @@ prog = prog.withSOS(dnin'*(M - M_lower_pull)*dnin - (Ll'*box_lim));
 options = spot_sdp_default_options();
 options.verbose = 1;
 
-SOS_soln = prog.minimize(-m_lower, @spot_mosek, options);
-
+SOS_soln = prog.minimize(-m_lower - 0.1*trace(M_lower_pull), @spot_mosek, options);
+% 0.1*trace(M_lower_pull)
 solved = ~SOS_soln.status.strcmp('STATUS_PRIMAL_AND_DUAL_FEASIBLE');
 
 if (solved == 0)
     m_lower = double(SOS_soln.eval(m_lower));
-    M_lower_pull = clean(double(SOS_soln.eval(M_lower_pull)),1e-3);    
+    M_lower_pull = clean(double(SOS_soln.eval(M_lower_pull)),1e-6);    
 end
     
 end

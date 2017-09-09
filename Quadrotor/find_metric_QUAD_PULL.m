@@ -12,25 +12,20 @@ ccm_eps = 1e-1;
 
 r_lim = pi/3;
 p_lim = pi/3;
-vx_lim = 1;
-vy_lim = 1;
-vz_lim = 1;
 th_lim_low = 0.5*g;
 th_lim_high = 2*g;
 
 %% Pullback method
 
-lambda = 1;
+lambda = 0.8;
 
 B_perp = [eye(6); zeros(3,6)];
 Ac = [zeros(3), eye(3), zeros(3);
       zeros(3), zeros(3), eye(3);
       zeros(3,9)];
   
-W_scale = diag([1*ones(6,1);10;4;0.01]);
-
-W_best = W_scale;
-cond_l = 1; cond_u = 70;
+W_scale = blkdiag(2*eye(3),1*eye(3),0.25*eye(3));  
+cond_l = 1; cond_u = 150;
 eps = 0.5;
 while(cond_u - cond_l > eps)
     condn = 0.5*(cond_l+cond_u);
@@ -39,10 +34,10 @@ while(cond_u - cond_l > eps)
     cvx_begin sdp quiet
     variable W_xi(9,9) symmetric
     variables w_lower w_upper
-    minimize(trace(W_scale*W_xi))
-    subject to0
+    minimize(0)
+    subject to
     w_lower >= 1;
-    condn*w_lower >= w_upper;
+    condn*w_lower >= trace(W_scale*W_xi);
     W_xi >= w_lower*eye(n);
     W_xi <= w_upper*eye(n);
     B_perp'*(Ac*W_xi + W_xi*Ac')*B_perp <= -2*lambda*(B_perp'*(W_xi)*B_perp);
@@ -62,15 +57,17 @@ W_xi = W_best;
 M_xi = W_xi\eye(n);
 M_xi = 0.5*(M_xi + M_xi');
 
-b_T = @(x) [sin(x(8)); -cos(x(8))*sin(x(7)); cos(x(8))*cos(x(7))];
+b_T = @(x) [sin(x(9)); -cos(x(9))*sin(x(8)); cos(x(9))*cos(x(8))];
 
-db_T_q =@(x) [0, cos(x(8));
-    -cos(x(7))*cos(x(8)), sin(x(7))*sin(x(8));
-    -sin(x(7))*cos(x(8)),-cos(x(7))*sin(x(8))];
+db_T_q =@(x) [0, cos(x(9));
+    -cos(x(8))*cos(x(9)), sin(x(8))*sin(x(9));
+    -sin(x(8))*cos(x(9)),-cos(x(8))*sin(x(9))];
 
-Phi = @(x) blkdiag(eye(3),eye(3),-[db_T_q(x)*x(9), b_T(x)]);
+Phi = @(x) blkdiag(eye(3),eye(3),-[b_T(x), db_T_q(x)*x(7)]);
 
 M_pull = @(x) Phi(x)'*M_xi*Phi(x);
+
+keyboard;
 
 %% Test pullback metric
 
@@ -91,7 +88,7 @@ for i4 = 1:length(r_range)
         for i6 = 1:length(th_range)
             
             x = [zeros(6,1);
-                r_range(i4); p_range(i5); th_range(i6)];
+                 th_range(i6); r_range(i4); p_range(i5)];
             
             M = M_pull(x);
             Theta = chol(M);
@@ -105,8 +102,8 @@ for i4 = 1:length(r_range)
 end
 d_bar = 0.1*max(sigma_ThBw(:))/lambda;
 disp('d_bar'); disp(d_bar);
-disp('M:'); disp(min(min(min(min(min(min(eig_M(:,:,:,1))))))));
-disp(max(max(max(max(max(max(eig_M(:,:,:,2))))))));
+disp('M:'); disp(min(min(min(eig_M(:,:,:,1)))));
+disp(max(max(max(eig_M(:,:,:,2)))));
 
 %% Compute Pullback bound
 
@@ -114,8 +111,11 @@ disp(max(max(max(max(max(max(eig_M(:,:,:,2))))))));
 M_lower_pull = blkdiag(M_lower_pull);
 W_upper_pull = M_lower_pull\eye(n);
 
-disp('euc_bounds');
+disp('euc_bounds (x)');
 disp(d_bar*sqrt(diag(W_upper_pull)));
+
+disp('euc_bounds (xi)');
+disp(d_bar*sqrt(diag(W_xi)));
 
 
 %% Save

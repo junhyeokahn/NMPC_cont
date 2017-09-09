@@ -46,7 +46,7 @@ xlabel('Time [s]');
 ylabel('Thrust [N]');
 grid on
 legend('net','commanded');
-set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+% set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 
 figure()
@@ -56,7 +56,7 @@ plot(t ,True_ctrl(:,2),'-','linewidth',2);
 xlabel('Time [s]');
 ylabel('$\dot{\phi}$ [rad/s]','interpreter','latex');
 grid on
-set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+% set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 subplot(3,1,2)
 plot(t, Nom_ctrl(:,3),'--','linewidth',2); hold on
@@ -64,7 +64,7 @@ plot(t, True_ctrl(:,3),'-','linewidth',2);
 xlabel('Time [s]');
 ylabel('$\dot{\theta}$ [rad/s]','interpreter','latex');
 grid on
-set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+% set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 subplot(3,1,3)
 plot(t, Nom_ctrl(:,4),'--','linewidth',2); hold on
@@ -72,7 +72,7 @@ plot(t, True_ctrl(:,4),'-','linewidth',2);
 xlabel('Time [s]');
 ylabel('$\dot{\psi}$ [rad/s]','interpreter','latex');
 grid on
-set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+% set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 %% Rotation angles
 figure()
