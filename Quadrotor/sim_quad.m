@@ -41,12 +41,12 @@ end
 %% Setup simulation
 
 %Contraction controller rate
-dt_sim = 1/250;
+dt_sim = 1/500;
 
 %Initial conditions
 thrust_init = g;
-x_init = [state_nom(1,:)'+[0.01*randn(6,1);zeros(3,1)];
-         zeros(3,1);
+x_init = [state_nom(1,:)'+[0.01*randn(6,1);0;0;pi/2];
+          zeros(3,1);
           thrust_init];
 
 xc_init = [x_init(1:6); thrust_init; x_init(7:8)];
@@ -120,6 +120,8 @@ yaw = x_init(9);
 disp('Ready to Simulate');
 keyboard;
 
+uc_aux_prev = zeros(3,1);
+
 for i = 1:T_steps
     
     xc_nom = MP_state(1+(i-1)*(dt_sim/dt),:);
@@ -144,7 +146,7 @@ for i = 1:T_steps
         Aux_ctrl(i,4) = 2*lambda*(yaw_nom-yaw);
         ctrl_solve_time(i,2) = toc;
     else
-        [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,1:3)', state_xc, yaw);       
+        [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,1:3)', state_xc, yaw, uc_aux_prev);       
     end
     
     True_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = uc_nom+kron(ones((dt_sim/dt)+1,1),Aux_ctrl(i,:));

@@ -17,15 +17,15 @@ th_lim_high = 2*g;
 
 %% Pullback method
 
-lambda = 0.8;
+lambda = 0.7;
 
 B_perp = [eye(6); zeros(3,6)];
 Ac = [zeros(3), eye(3), zeros(3);
       zeros(3), zeros(3), eye(3);
       zeros(3,9)];
   
-W_scale = blkdiag(2*eye(3),1*eye(3),0.25*eye(3));  
-cond_l = 1; cond_u = 150;
+W_scale = blkdiag(1.0*eye(3),1*eye(3),3*eye(3));  
+cond_l = 1; cond_u = 200;
 eps = 0.5;
 while(cond_u - cond_l > eps)
     condn = 0.5*(cond_l+cond_u);

@@ -13,11 +13,11 @@ m = 3;
 
 %% Dynamics
 
-%pos,vel, roll, pitch, yaw, om, thrust_sp
+%pos,vel, roll, pitch, yaw, om, thrust_sp,ang_vel_err_state
 f = @(x) [x(4:6);
           [0;0;g;]-[sin(x(8)); -cos(x(8))*sin(x(7)); cos(x(8))*cos(x(7))]*x(13);
           R_eul(x(7:9))*x(10:12);
-          -cross(x(10:12),Jq*x(10:12));
+          -Jq\cross(x(10:12),Jq*x(10:12));
           0];
       
 B =      [zeros(9,4);
@@ -86,8 +86,8 @@ end
 
 %Angular rate PI controller gains
 global kp_om ki_om;
-kp_om = lambda;
-ki_om = 0.0;
+kp_om = 2*lambda;
+ki_om = 0.1;
 
 
 
