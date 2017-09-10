@@ -43,7 +43,7 @@ load(poly_file);
 
 %% Setup metric 
 
-pullback = 1;
+pullback = 0;
 
 if (~pullback)
     %SOS METRIC
@@ -58,8 +58,8 @@ if (~pullback)
     dW_fnc = @(x) {dw_poly_th_fnc(x), dw_poly_r_fnc(x), dw_poly_p_fnc(x)};
     n_W = [7,8,9];
     
-    sigma_ThBw = 0.684;
-    lambda = 0.95;
+    sigma_ThBw = 0.3522;
+    lambda = 0.84;
     
     %Bounds
     
