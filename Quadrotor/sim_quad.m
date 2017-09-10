@@ -41,7 +41,7 @@ end
 %% Setup simulation
 
 %Contraction controller rate
-dt_sim = 1/500;
+dt_sim = 1/250;
 
 %Initial conditions
 thrust_init = g;
@@ -153,7 +153,7 @@ for i = 1:T_steps
     %Disturbance model
     w_dist(i,:) = 0*w_max*(1/sqrt(3))*[1;1;1]';
     
-    [d_t,d_state] = ode113(@(t,d_state)quad_ode(t,d_state,[solve_t(i):dt:solve_t(i+1)]',uc_nom,Aux_ctrl(i,:),state_xc(7),...
+    [d_t,d_state] = ode113(@(t,d_state)quad_ode(t,d_state,[solve_t(i):dt:solve_t(i+1)]',uc_nom,Aux_ctrl(i,:),...
         f,B,B_w,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);
     
     state = d_state(end,:)';

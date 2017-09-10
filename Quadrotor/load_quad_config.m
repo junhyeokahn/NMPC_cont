@@ -14,8 +14,8 @@ m = 3;
 %% Dynamics
 
 %pos,vel, roll, pitch, yaw, om, thrust_sp
-f = @(x,tau) [x(4:6);
-          [0;0;g;]-[sin(x(8)); -cos(x(8))*sin(x(7)); cos(x(8))*cos(x(7))]*tau;
+f = @(x) [x(4:6);
+          [0;0;g;]-[sin(x(8)); -cos(x(8))*sin(x(7)); cos(x(8))*cos(x(7))]*x(13);
           R_eul(x(7:9))*x(10:12);
           -cross(x(10:12),Jq*x(10:12));
           0];

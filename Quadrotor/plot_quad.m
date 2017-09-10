@@ -22,7 +22,7 @@ end
 %% Trajectory errors
 figure()
 subplot(2,1,1)
-plot(t,MP_state(1:(dt_sim/dt):end,1:3)-x_act(1:end,1:3),'linewidth',2);
+plot(solve_t,MP_state(1:(dt_sim/dt):end,1:3)-x_act(1:end,1:3),'linewidth',2);
 grid on
 xlabel('Time [s]');
 ylabel('[m]');
@@ -30,7 +30,7 @@ legend('e_x','e_y','e_z');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 subplot(2,1,2)
-plot(t,(MP_state(1:(dt_sim/dt):end,9)-x_act(:,9))*(180/pi),'linewidth',2);
+plot(solve_t,(MP_state(1:(dt_sim/dt):end,9)-x_act(:,9))*(180/pi),'linewidth',2);
 grid on
 xlabel('Time [s]'); ylabel('[deg]');
 legend('e_\psi');
@@ -41,11 +41,11 @@ figure()
 hold on
 % plot(t,thrust_nom,'r-','linewidth',1.5);
 plot(t,MP_state(:,7)*mq,'b-','linewidth',2);
-plot(t,x_act(:,13)*mq,'k-','linewidth',2);
+plot(solve_t,x_act(:,13)*mq,'k-','linewidth',2);
 xlabel('Time [s]');
 ylabel('Thrust [N]');
 grid on
-legend('net','commanded');
+legend('nominal','actual');
 % set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 
@@ -78,7 +78,7 @@ grid on
 figure()
 subplot(2,1,1)
 plot(t, MP_state(:,8)*(180/pi),'--','linewidth',2); hold on
-plot(t, x_act(:,7)*(180/pi),'-','linewidth',2); hold on
+plot(solve_t, x_act(:,7)*(180/pi),'-','linewidth',2); hold on
 xlabel('Time [s]');
 ylabel('$\phi$ [deg]','interpreter','latex');
 grid on
@@ -86,7 +86,7 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 subplot(2,1,2)
 plot(t, MP_state(:,9)*(180/pi),'--','linewidth',2); hold on
-plot(t, x_act(:,8)*(180/pi),'-','linewidth',2); hold on
+plot(solve_t, x_act(:,8)*(180/pi),'-','linewidth',2); hold on
 xlabel('Time [s]');
 ylabel('$\theta$ [deg]','interpreter','latex');
 grid on
