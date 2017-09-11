@@ -77,7 +77,7 @@ switch (sim_case)
         jz_d = zeros(length(t_vec),1);
         
     case 'hover'
-        T = 10;
+        T = 15;
         t_vec = (0:dt:T)';
         
         x_d = zeros(length(t_vec),1);
