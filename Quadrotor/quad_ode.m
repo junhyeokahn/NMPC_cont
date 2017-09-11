@@ -9,7 +9,7 @@ euler_dot_des = uc(2:4)';
 om_des = R_om(x(7:9))*euler_dot_des;
 
 om = x(10:12);
-M = kp_om*(om_des - om) + cross(om,Jq*om);
+M = kp_om*(om_des - om);% + cross(om,Jq*om);
 
 u = [uc(1);M];
 

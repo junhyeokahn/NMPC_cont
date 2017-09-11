@@ -120,7 +120,7 @@ yaw = x_init(9);
 disp('Ready to Simulate');
 keyboard;
 
-uc_aux_prev = zeros(3,1);
+uc_aux_prev = zeros(4,1);
 
 for i = 1:T_steps
     
@@ -136,24 +136,31 @@ for i = 1:T_steps
         ctrl_solve_time(i,1) = toc;
         
         Geod{i} = Xc';
+        
+        %adjust to include yaw
+        J_opt = J_opt + (yaw-yaw_nom)^2;
         geo_energy(i,1) = J_opt;
         geo_warm.result = geo_result;
         geo_warm.sol = 1;
         
+        %adjustments for yaw
+        Xc(end,:) = linspace(yaw_nom,yaw,size(Xc,2));
+        Xc_dot(end,:) = kron(ones(1,size(Xc_dot,2)),(yaw-yaw_nom));
+        
         tic
-        [Aux_ctrl(i,1:3),opt_solved(i,2)] = compute_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
-            W_fnc,f_ctrl,B_ctrl,uc_nom(1,1:3)',lambda);
-        Aux_ctrl(i,4) = 2*lambda*(yaw_nom-yaw);
+        [Aux_ctrl(i,:),opt_solved(i,2)] = compute_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
+            W_fnc,f_ctrl,B_ctrl,uc_nom(1,:)',lambda);
         ctrl_solve_time(i,2) = toc;
     else
-        [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,1:3)', state_xc, yaw, uc_aux_prev);       
+        [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,:)', state_xc, yaw, uc_aux_prev);       
+        uc_aux_prev = Aux_ctrl(i,:)';
     end
     
     True_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = uc_nom+kron(ones((dt_sim/dt)+1,1),Aux_ctrl(i,:));
     Nom_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = uc_nom;
     
     %Disturbance model
-    w_dist(i,:) = w_max*(1/sqrt(3))*[1;1;1]';
+    w_dist(i,:) = 0*w_max*(1/sqrt(3))*[1;1;1]';
     
     [d_t,d_state] = ode113(@(t,d_state)quad_ode(t,d_state,[solve_t(i):dt:solve_t(i+1)]',uc_nom,Aux_ctrl(i,:),...
         f,B,B_w,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);

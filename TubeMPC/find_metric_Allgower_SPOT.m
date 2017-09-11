@@ -1,5 +1,7 @@
 function [solved, w_lower, w_upper] = find_metric_Allgower_SPOT(x1_lim, x2_lim,condn, lambda, ccm_eps,return_metric)
 
+norm_scale = 1e-5;
+
 %% State-space and dynamics
 
 x = msspoly('x',2);
@@ -68,11 +70,13 @@ lc_order = 4;
 [prog, Lc] = prog.newSOSPoly(monomials(l_ccm_states,0:lc_order),4);
 
 %W uniform bounds
-prog = prog.withPos(w_lower-0.0035);
+% prog = prog.withPos(w_lower-0.0035);
+prog = prog.withPos(w_lower-1.0);
 prog = prog.withPSD(w_upper*eye(2)-W_upper);
 
 %Condition bound
 prog = prog.withPos(condn*w_lower - w_upper);
+% prog = prog.withPos(condn*w_lower - trace(W_upper));
 
 %W pos def
 prog = prog.withSOS((dtwo'*W*dtwo - w_lower*(dtwo'*dtwo)) - Ll'*box_lim);
@@ -94,7 +98,7 @@ len = length(free_vars);
 prog = prog.withPos(-free_vars + a);
 prog = prog.withPos(free_vars + a);
 try
-    SOS_soln = prog.minimize(sum(a), @spot_mosek, options);
+    SOS_soln = prog.minimize(norm_scale*sum(a), @spot_mosek, options);
 catch
     %failed
     solved = 1;
@@ -121,6 +125,7 @@ if (return_metric)
         end
         w_poly = w_poly(find(NNZ_list));
         W_sol = W_sol(:,:,find(NNZ_list));
+        fprintf('%d unique monomials\n',length(w_poly));
         
         dw_poly_x1 = diff(w_poly,x(1));
         dw_poly_x2 = diff(w_poly,x(2));

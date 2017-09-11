@@ -36,6 +36,15 @@ xlabel('Time [s]'); ylabel('[deg]');
 legend('e_\psi');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
+%% Velocity
+figure()
+plot(solve_t,x_act(1:end,4:6),'linewidth',2);
+grid on
+xlabel('Time [s]');
+ylabel('Velocity [m/s]');
+legend('x','y','z');
+set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+
 %% Control effort
 figure()
 hold on
@@ -47,7 +56,6 @@ ylabel('Thrust [N]');
 grid on
 legend('nominal','actual');
 % set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
-
 
 figure()
 subplot(3,1,1)
