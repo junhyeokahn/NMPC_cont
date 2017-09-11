@@ -45,7 +45,7 @@ dt_sim = 1/500;
 
 %Initial conditions
 thrust_init = g;
-x_init = [state_nom(1,:)'+[0.01*randn(6,1);0;0;pi/2];
+x_init = [state_nom(1,:)'+[0.01*randn(6,1);0;0;0];
           zeros(3,1);
           thrust_init];
 
