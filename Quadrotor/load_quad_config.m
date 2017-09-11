@@ -25,8 +25,8 @@ B =      [zeros(9,4);
           1,zeros(1,3)];
   
 f_ctrl = @ f_xc;      
-B_ctrl = [zeros(6,4);
-          eye(4)];
+B_ctrl = [zeros(6,3);
+          eye(3)];
 
 B_w = [zeros(3);
        eye(3);
@@ -43,7 +43,7 @@ load(poly_file);
 
 %% Setup metric 
 
-pullback = 0;
+pullback = 1;
 
 if (~pullback)
     %SOS METRIC
@@ -75,7 +75,7 @@ if (~pullback)
 else
     % PULLBACK METRIC
     load 'metric_QUAD_pullback.mat';
-    In = eye(10);
+    In = eye(n);
     P = In(1:3,:);
     Ap = (P*(M_xi\P'))\eye(3);
     M_ccm_pos = (1/d_bar^2)*Ap;    

@@ -5,7 +5,7 @@ warning('off','MATLAB:lang:badlyScopedReturnValue');
 
 %% Constants
 
-n = 10;
+n = 9;
 % lambda = 1;
 g = 9.81;
 ccm_eps = 1e-1;
@@ -17,14 +17,15 @@ th_lim_high = 2*g;
 
 %% Pullback method
 
-lambda = 0.5;
+lambda = 0.8;
 
 B_perp = [eye(6); zeros(3,6)];
 Ac = [zeros(3), eye(3), zeros(3);
       zeros(3), zeros(3), eye(3);
       zeros(3,9)];
   
-W_scale = blkdiag(1.0*eye(3),1.0*eye(3),3*eye(3));  
+W_scale = blkdiag(diag([0.2,0.2,0.2]),diag([1,1,1]),...
+                    1*eye(3));  
 cond_l = 1; cond_u = 300;
 eps = 0.5;
 while(cond_u - cond_l > eps)
@@ -52,8 +53,7 @@ while(cond_u - cond_l > eps)
         cond_l = condn;
     end
 end
-W_xi = blkdiag(W_best,1); %add in yaw
-
+W_xi = W_best;
 M_xi = W_xi\eye(n);
 M_xi = 0.5*(M_xi + M_xi');
 
@@ -63,7 +63,7 @@ db_T_q =@(x) [0, cos(x(9));
     -cos(x(8))*cos(x(9)), sin(x(8))*sin(x(9));
     -sin(x(8))*cos(x(9)),-cos(x(8))*sin(x(9))];
 
-Phi = @(x) blkdiag(eye(3),eye(3),-[b_T(x), db_T_q(x)*x(7)],1);
+Phi = @(x) blkdiag(eye(3),eye(3),-[b_T(x), db_T_q(x)*x(7)]);
 
 M_pull = @(x) Phi(x)'*M_xi*Phi(x);
 
@@ -73,7 +73,7 @@ keyboard;
 
 Bw = [zeros(3);
     eye(3);
-    zeros(4,3)];
+    zeros(3)];
 ctrl_N = 10;
 r_range = linspace(-r_lim, r_lim, ctrl_N);
 p_range = linspace(-p_lim, p_lim, ctrl_N);
@@ -107,8 +107,7 @@ disp(max(max(max(eig_M(:,:,:,2)))));
 
 %% Compute Pullback bound
 
-[m_lower, M_lower_pull] = compute_QUAD_bound_pull(M_xi(1:9,1:9),r_lim,p_lim,th_lim_low,th_lim_high);
-M_lower_pull = blkdiag(M_lower_pull,1);
+[m_lower, M_lower_pull] = compute_QUAD_bound_pull(M_xi,r_lim,p_lim,th_lim_low,th_lim_high);
 W_upper_pull = M_lower_pull\eye(n);
 
 disp('euc_bounds (x)');
