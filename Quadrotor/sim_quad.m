@@ -70,13 +70,9 @@ end
 %% Setup Auxiliary controller
 
 if (~pullback)
-    J_opt = J_opt + (x_init(9)-0)^2;
-    Xc = [Xc;linspace(0,x_init(9),size(Xc,2))];
-    Xc_dot = [Xc_dot;kron(ones(1,size(Xc_dot,2)),(x_init(9)-0))];
-    
     tic
-    [ctrl_opt,converged_aux] = compute_quad_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
-        W_fnc,f_ctrl,B_ctrl,MP_ctrl(1,:)',lambda);
+    [ctrl_opt,converged_aux] = compute_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
+        W_fnc,f_ctrl,B_ctrl,MP_ctrl(1,1:3)',lambda);
     toc;
     disp('opt_control:');disp(converged_aux);
     disp(ctrl_opt);
@@ -142,19 +138,14 @@ for i = 1:T_steps
         
         Geod{i} = Xc';
         
-        %adjust to include yaw
-        J_opt = J_opt + (yaw-yaw_nom)^2;
         geo_energy(i,1) = J_opt;
         geo_warm.result = geo_result;
         geo_warm.sol = 1;
         
-        %adjustments for yaw
-        Xc = [Xc;linspace(yaw_nom,yaw,size(Xc,2))];
-        Xc_dot = [Xc_dot;kron(ones(1,size(Xc_dot,2)),(yaw-yaw_nom))];
-        
         tic
-        [Aux_ctrl(i,:),opt_solved(i,2)] = compute_quad_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
-            W_fnc,f_ctrl,B_ctrl,uc_nom(1,:)',lambda);
+        [Aux_ctrl(i,1:3),opt_solved(i,2)] = compute_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
+            W_fnc,f_ctrl,B_ctrl,uc_nom(1,1:3)',lambda);
+        Aux_ctrl(i,4) = -2*(yaw-yaw_nom)-(yaw_dot-uc_nom(1,4));
         ctrl_solve_time(i,2) = toc;
     else
         [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,:)', state_xc, yaw,euler_dot(3));       
