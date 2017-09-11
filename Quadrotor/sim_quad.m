@@ -45,7 +45,7 @@ dt_sim = 1/500;
 
 %Initial conditions
 thrust_init = g;
-x_init = [state_nom(1,:)'+[0.01*randn(6,1);0;0;pi/2];
+x_init = [state_nom(1,:)'+[0.01*randn(6,1);0;0;pi/4];
           zeros(3,1);
           thrust_init];
 
@@ -116,6 +116,7 @@ geo_energy = NaN(T_steps,1);
 %Initialize
 x_act(1,:) = x_init';
 state = x_init;
+euler_dot = R_eul(x_init(7:9))*x_init(10:12);
 state_xc = xc_init;
 yaw = x_init(9);
 
@@ -156,7 +157,7 @@ for i = 1:T_steps
             W_fnc,f_ctrl,B_ctrl,uc_nom(1,:)',lambda);
         ctrl_solve_time(i,2) = toc;
     else
-        [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,:)', state_xc, yaw, uc_aux_prev);       
+        [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,:)', state_xc, yaw,euler_dot(3));       
         uc_aux_prev = Aux_ctrl(i,:)';
     end
     
@@ -170,6 +171,7 @@ for i = 1:T_steps
         f,B,B_w,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);
     
     state = d_state(end,:)';
+    euler_dot = R_eul(state(7:9))*state(10:12);    
     x_act(i+1,:) = state';
     state_xc = [state(1:6);state(13);state(7:8)];
     yaw = wrapToPi(state(9));

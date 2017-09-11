@@ -6,5 +6,5 @@ b_T =  [sin(xc(9)); -cos(xc(9))*sin(xc(8)); cos(xc(9))*cos(xc(8))];
 
 f_ctrl =     [xc(4:6);
                 [0;0;g] - xc(7)*b_T;
-                zeros(4,1)];
+                zeros(3,1)];
 end

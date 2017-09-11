@@ -47,15 +47,22 @@ set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 %% Control effort
 figure()
+subplot(2,1,1)
 hold on
 % plot(t,thrust_nom,'r-','linewidth',1.5);
-plot(t,MP_state(:,7)*mq,'b-','linewidth',2);
-plot(solve_t,x_act(:,13)*mq,'k-','linewidth',2);
+plot(t,MP_state(:,7),'b-','linewidth',2);
+plot(solve_t,x_act(:,13),'k-','linewidth',2);
 xlabel('Time [s]');
 ylabel('Thrust [N]');
 grid on
 legend('nominal','actual');
 % set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
+subplot(2,1,2)
+plot(t, Nom_ctrl(:,1),'--','linewidth',2); hold on
+plot(t ,True_ctrl(:,1),'-','linewidth',2);
+xlabel('Time [s]');
+ylabel('$\dot{\tau}$ [N/s]','interpreter','latex');
+grid on
 
 figure()
 subplot(3,1,1)
