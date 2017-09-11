@@ -43,7 +43,7 @@ load(poly_file);
 
 %% Setup metric 
 
-pullback = 1;
+pullback = 0;
 
 if (~pullback)
     %SOS METRIC
