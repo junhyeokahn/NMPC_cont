@@ -145,7 +145,7 @@ for i = 1:T_steps
         tic
         [Aux_ctrl(i,1:3),opt_solved(i,2)] = compute_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
             W_fnc,f_ctrl,B_ctrl,uc_nom(1,1:3)',lambda);
-        Aux_ctrl(i,4) = -2*(yaw-yaw_nom)-(yaw_dot-uc_nom(1,4));
+        Aux_ctrl(i,4) = -2*(yaw-yaw_nom)-(euler_dot(3)-uc_nom(1,4));
         ctrl_solve_time(i,2) = toc;
     else
         [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,:)', state_xc, yaw,euler_dot(3));       
