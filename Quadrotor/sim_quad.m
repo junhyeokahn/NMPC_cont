@@ -11,9 +11,9 @@ dt = 1/500;
 [t,state_nom, ctrl_dyn_nom,thrust_nom, accel_nom] = generate_quad_traj_10(dt,Jq,mq,g,poly_file);
 Tp = t(end);
 
-% th_nom: thrust
+% thrust_nom: thrust
 % ctrl_dyn_nom: th_dot, rd, pd, yd
-% state_nom: x,y,z, vx, vy,vz, r, p, y
+% state_nom: x,y,z, vx, vy,vz, roll, pitch, yaw
 
 %Generate timeseries data for simulation
 thrust_dot = ctrl_dyn_nom(:,1)/mq;
@@ -41,13 +41,18 @@ end
 %% Setup simulation
 
 %Contraction controller rate
-dt_sim = 1/500;
+dt_sim = 1/250;
 
 %Initial conditions
+
+%simulation state: [pos, vel, att; om; thrust]
 thrust_init = g;
-x_init = [state_nom(1,:)'+[0.01*randn(6,1);0;0;pi/4];
-          zeros(3,1);
-          thrust_init];
+% x_init = [state_nom(1,:)'+[0.01*randn(6,1);0;0;0];
+%           zeros(3,1);
+%           thrust_init];
+
+x_init = [state_nom(1,1:3)';zeros(3,1);0;0;pi/2;
+          zeros(3,1); thrust_init];
 
 xc_init = [x_init(1:6); thrust_init; x_init(7:8)];
 
@@ -112,7 +117,6 @@ geo_energy = NaN(T_steps,1);
 %Initialize
 x_act(1,:) = x_init';
 state = x_init;
-euler_dot = R_eul(x_init(7:9))*x_init(10:12);
 state_xc = xc_init;
 yaw = x_init(9);
 
@@ -145,10 +149,10 @@ for i = 1:T_steps
         tic
         [Aux_ctrl(i,1:3),opt_solved(i,2)] = compute_opt_aux(geo_Ke,Xc,Xc_dot,J_opt,...
             W_fnc,f_ctrl,B_ctrl,uc_nom(1,1:3)',lambda);
-        Aux_ctrl(i,4) = -2*(yaw-yaw_nom)-(yaw_dot-uc_nom(1,4));
+        Aux_ctrl(i,4) = -2*(yaw-yaw_nom);
         ctrl_solve_time(i,2) = toc;
     else
-        [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,:)', state_xc, yaw,euler_dot(3));       
+        [Aux_ctrl(i,:),geo_energy(i,1)] = compute_aux_pullback(f_ctrl,B_ctrl,lambda, M_xi, xc_nom', yaw_nom, uc_nom(1,:)', state_xc, yaw);       
         uc_aux_prev = Aux_ctrl(i,:)';
     end
     
@@ -156,13 +160,12 @@ for i = 1:T_steps
     Nom_ctrl(1+(i-1)*(dt_sim/dt):1+i*(dt_sim/dt),:) = uc_nom;
     
     %Disturbance model
-    w_dist(i,:) = 0*w_max*(1/sqrt(3))*[1;1;1]';
+    w_dist(i,:) = w_max*(1/sqrt(3))*[1;1;1]';
     
     [d_t,d_state] = ode113(@(t,d_state)quad_ode(t,d_state,[solve_t(i):dt:solve_t(i+1)]',uc_nom,Aux_ctrl(i,:),...
         f,B,B_w,w_dist(i,:)'),[solve_t(i),solve_t(i+1)],state,ode_options);
     
-    state = d_state(end,:)';
-    euler_dot = R_eul(state(7:9))*state(10:12);    
+    state = d_state(end,:)';   
     x_act(i+1,:) = state';
     state_xc = [state(1:6);state(13);state(7:8)];
     yaw = wrapToPi(state(9));

@@ -24,7 +24,7 @@ Ac = [zeros(3), eye(3), zeros(3);
       zeros(3), zeros(3), eye(3);
       zeros(3,9)];
   
-W_scale = blkdiag(diag([0.2,0.2,0.2]),diag([1,1,1]),...
+W_scale = blkdiag(diag([0.2,0.2,0.2]),diag([0.2,0.2,0.2]),...
                     1*eye(3));  
 cond_l = 1; cond_u = 300;
 eps = 0.5;

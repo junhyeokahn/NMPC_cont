@@ -1,7 +1,14 @@
 function   setup_geodesic_MPC(n,N,W,dW,n_W)
+%n: state-space dimension
+%N: Chebyshev polynomial order
+%W, dW: W and dW matrix functions
+%n_W: states that W is a function of
 
-K = 6;
-K_e = 2;
+K = 2*N; %number of points to use for discretization
+K_e = 2; %final evaluation points (beginning, middle, endpoint)
+
+%Optimization variables: chebyshev coefficients for geodesic
+%{c_0^1...c_N^1},...,{c_0^1...c_N^n}
 
 %Obtain Chebyschev Pseudospectral Numerics
 
@@ -25,6 +32,7 @@ Aeq = sparse([A_start;
 [T_e, T_dot_e] = ...
     compute_cheby(K_e,N,t_e);
 
+%use to evaluate x_k, x_dot_k
 Phi = zeros(n,n*(N+1),K+1);
 Phi_dot = zeros(n,n*(N+1),K+1);
 for k = 1:K+1
@@ -32,7 +40,7 @@ for k = 1:K+1
     Phi_dot(:,:,k) = 2*kron(eye(n),T_dot(:,k)');
 end
 
-% Ti = cell(length(n_W),1);
+%use to evaluate cost derivative
 Ti = zeros(n*(N+1),K+1,length(n_W));
 In = eye(n);
 for j = 1:length(n_W) 
@@ -41,6 +49,7 @@ for j = 1:length(n_W)
 end
 
 global  GEO_X_MPC; 
+
 GEO_X_MPC = zeros(n,K+1);
 
 global  GEO_MXDOT_MPC; 

@@ -5,6 +5,8 @@ function [NMPC_state,NMPC_ctrl,T_rejoin,converged,warm,Prob] = ...
 %% Solution guess
 if (~warm.sol) %don't have guess for first MPC iteration
     
+    %only need to guess for the first MPC iteration
+    %take nominal MP
     tau = (1/2)*(warm.Tp*warm.s_t+warm.Tp) ;
     state_prev = interp1([0:dt:warm.Tp]',MP_state(1:(warm.Tp/dt)+1,:),tau);
     ctrl_prev = interp1([0:dt:warm.Tp]',MP_ctrl(1:(warm.Tp/dt)+1,:),tau);
@@ -39,12 +41,17 @@ if (~warm.sol) %don't have guess for first MPC iteration
 end
 
 %% Update constraint information
-Prob.user.x_act = act_p;
 
+%initial actual state
+Prob.user.x_act = act_p; 
+
+%initial RCI set upper bound
 Prob = modify_c_U(Prob,E_s,n*(N+1)+1);
+
+%lower bound on nominal rejoin time = solve_time + delta
 Prob = modify_x_L(Prob,min(warm.solve_t + delta,Prob.user.t_nom(end)),(n+m)*(N+1)+1);
 
-%% Update scaled obstacles
+%% Update scaled obstacles (time-varying bounds)
 obs_mpc = Prob.user.obs;
 tau = (1/2)*(warm.Tp*warm.s_t+warm.Tp);
 E_time_bound = (sqrt(E_s)*exp(-warm.lambda*tau) + warm.d_bar*(1-exp(-warm.lambda*tau))).^2;

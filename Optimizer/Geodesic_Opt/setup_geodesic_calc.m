@@ -1,8 +1,15 @@
 function [geo_Prob,K_e,T_e,T_dot_e,Aeq] = ...
     setup_geodesic_calc(n,N,W,dW,n_W)
+%n: state-space dimension
+%N: Chebyshev polynomial order
+%W, dW: W and dW matrix functions
+%n_W: states that W is a function of
 
-K = 6;
-K_e = 2;
+K = 2*N;
+K_e = 2; %beginning, middle, endpoint
+
+%Optimization variables: chebyshev coefficients for geodesic
+%{c_0^1...c_N^1},...,{c_0^1...c_N^n}
 
 %Obtain Chebyschev Pseudospectral Numerics
 
@@ -26,6 +33,7 @@ Aeq = sparse([A_start;
 [T_e, T_dot_e] = ...
     compute_cheby(K_e,N,t_e);
 
+%use to evaluate x_k, x_dot_k
 Phi = zeros(n,n*(N+1),K+1);
 Phi_dot = zeros(n,n*(N+1),K+1);
 for k = 1:K+1
@@ -33,12 +41,11 @@ for k = 1:K+1
     Phi_dot(:,:,k) = 2*kron(eye(n),T_dot(:,k)');
 end
 
-% Ti = cell(length(n_W),1);
+%use to evaluate cost derivative
 Ti = zeros(n*(N+1),K+1,length(n_W));
 In = eye(n);
 for j = 1:length(n_W)
     i = n_W(j);
-%     Ti{j} = sparse(kron(In(:,i),T));
     Ti(:,:,j) = kron(In(:,i),T);
 end
 

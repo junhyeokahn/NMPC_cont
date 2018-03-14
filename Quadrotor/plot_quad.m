@@ -30,7 +30,7 @@ legend('e_x','e_y','e_z');
 set(findall(gcf,'type','text'),'FontSize',32);set(gca,'FontSize',32)
 
 subplot(2,1,2)
-plot(solve_t,(MP_state(1:(dt_sim/dt):end,9)-x_act(:,9))*(180/pi),'linewidth',2);
+plot(solve_t,(MP_yaw(1:(dt_sim/dt):end,:)-x_act(:,9))*(180/pi),'linewidth',2);
 grid on
 xlabel('Time [s]'); ylabel('[deg]');
 legend('e_\psi');

@@ -11,9 +11,9 @@ ccm_eps = 0.05;
 
 %Dynamics constants
 
-p_lim = pi/4;
+p_lim = pi/3;
 pd_lim = pi/3;
-vy_lim = 2;
+vx_lim = 2;
 vz_lim = 1.0;
 
 
@@ -99,11 +99,11 @@ condn = 132.8;
 % condn = 675;
 return_metric = 1;
 
-[sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT_alt(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+[sos_prob, w_lower, w_upper] = find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vx_lim,vz_lim,...
                                 condn,lambda,ccm_eps,return_metric);
 
 %% Compute aux control bound
-load('metric_PVTOL_vectorized.mat');
+load('metric_PVTOL_vectorized_3.mat');
 
 disp('Checking CCM conditions and Computing control bound...');
 lambda = 0.998*lambda;
@@ -125,7 +125,7 @@ B_perp = [eye(4);
 
 ctrl_N = 12;
 p_range = linspace(-p_lim, p_lim, ctrl_N);
-vy_range = linspace(-vy_lim, vy_lim, ctrl_N);
+vy_range = linspace(-vx_lim, vx_lim, ctrl_N);
 vz_range = linspace(-vz_lim, vz_lim, ctrl_N);
 pd_range = linspace(-pd_lim, pd_lim, ctrl_N);
 

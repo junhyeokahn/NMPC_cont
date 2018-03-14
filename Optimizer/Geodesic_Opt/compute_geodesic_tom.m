@@ -9,6 +9,7 @@ beq = [start_p; end_p];
 Prob = replace_A(Prob,Aeq,beq,beq);
 
 if (~warm.sol)
+    %construct straight line initial guess
     vars_0 = zeros(n*(N+1),1);
     for i = 1:n
         vars_0((i-1)*(N+1)+1:(i-1)*(N+1)+2) = [(start_p(i)+end_p(i))/2;
@@ -16,6 +17,7 @@ if (~warm.sol)
     end
     Prob = modify_x_0(Prob,vars_0);
 else
+    %warm start
     Prob = WarmDefSOL(solver,Prob,warm.result);
 end
 

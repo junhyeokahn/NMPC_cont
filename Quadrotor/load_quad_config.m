@@ -49,7 +49,6 @@ if (~pullback)
     %SOS METRIC
     
     %Metric Controller state-space: xc: x,y,z, vx,vy,vz, th, r,p
-    %Auxiliary Metric state-space: xic = [x,y,z,vx,vy,vz,ax,ay,az] := phi(xc)
     %Metric Controller control-space: uc: rd, pd, th_dot
     
     load ('metric_QUAD_vectorized.mat');
@@ -74,6 +73,7 @@ if (~pullback)
     
 else
     % PULLBACK METRIC
+    % Auxiliary Metric state-space: xic = [x,y,z,vx,vy,vz,ax,ay,az] := phi(xc)
     load 'metric_QUAD_pullback.mat';
     In = eye(n);
     P = In(1:3,:);
@@ -85,7 +85,7 @@ end
 
 %Angular rate PI controller gains
 global kp_om ki_om;
-kp_om = 2*lambda;
+kp_om = 3*lambda;
 ki_om = 0.1;
 
 

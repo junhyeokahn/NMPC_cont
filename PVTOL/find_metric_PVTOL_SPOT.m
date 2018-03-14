@@ -1,20 +1,21 @@
 function [solved,w_lower,w_upper] = ...
-    find_metric_PVTOL_SPOT(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
+    find_metric_PVTOL_SPOT_alt(n,g,p_lim,pd_lim,vy_lim,vz_lim,...
     condn,lambda,ccm_eps,return_metric)
 %%
 
 
-% W_scale = diag([0.02;0.02;0.0367;0.005;0.001;0.002]);
+% W_scale = diag([0.02;0.04;0.06;0.005;0.01;0.008]);
 W_scale = diag([0.001;0.02;0.0367;0.005;0.001;0.002]);
+norm_scale = 1e-4;
 
 % sin_x = @(x) 0.05059*(x/(pi/6));
 % cos_x = @(x) 0.9326 - 0.06699*(2*(x/(pi/6))^2 -1);
 
-sin_x = @(x)  0.7264*(x/(pi/4)) - 0.01942*(4*(x/(pi/4))^3 - 3*(x/(pi/4)));
-cos_x = @(x) 0.8516 - 0.1464*(2*(x/(pi/4))^2 -1);
+% sin_x = @(x)  0.7264*(x/(pi/4)) - 0.01942*(4*(x/(pi/4))^3 - 3*(x/(pi/4)));
+% cos_x = @(x) 0.8516 - 0.1464*(2*(x/(pi/4))^2 -1);
 
-% sin_x = @(x) 0.9101*(x/(pi/3)) - 0.04466*(4*(x/(pi/3))^3 - 3*(x/(pi/3)));
-% cos_x = @(x) 0.7441 -0.2499*(2*(x/(pi/3))^2 -1);
+sin_x = @(x) 0.9101*(x/(pi/3)) - 0.04466*(4*(x/(pi/3))^3 - 3*(x/(pi/3)));
+cos_x = @(x) 0.7441 -0.2499*(2*(x/(pi/3))^2 -1);
 
 %states
 x = msspoly('x',6);
@@ -106,15 +107,17 @@ l_def_states = [x(3);x(4)];
 lc_order = 6;
 l_ccm_states = [x(3);x(4);x(6);x(5)];
 
-[prog, Lc_1] = prog.newSOSPoly(monomials([l_ccm_states;dfor],0:lc_order),1);
-[prog, Lc_2_4] = prog.newSOSPoly(monomials([l_ccm_states;dfor],0:lc_order),3);
-Lc = [Lc_1; Lc_2_4];
+[ccm_def_mon, ccm_def_mat] = monomials([l_ccm_states;dfor],0:lc_order);
+ccm_def_keep = find(sum(ccm_def_mat(:,5:8),2)==2); %only keep quadratics in dfor
+ccm_def_mon = ccm_def_mon(ccm_def_keep);
+[prog, Lc] = prog.newSOSPoly(ccm_def_mon,4);
 
 %W uniform bounds
-prog = prog.withPos(w_lower-0.5);
+prog = prog.withPos(w_lower-1);
 prog = prog.withPSD(w_upper*eye(n)-W_upper);
 
 %Condition bound
+% prog = prog.withPos(condn*w_lower - w_upper);
 prog = prog.withPos(condn*w_lower - w_upper);
 
 %W pos def
@@ -128,17 +131,17 @@ prog = prog.withSOS((dfor'*R_CCM*dfor - ccm_eps*(dfor'*dfor)) - (Lc'*box_lim));
 options = spot_sdp_default_options();
 % options.solveroptions.MSK_IPAR_BI_CLEAN_OPTIMIZER = 'MSK_OPTIMIZER_INTPNT';
 % options.solveroptions.MSK_IPAR_INTPNT_BASIS = 'MSK_BI_NEVER';
-options.verbose = return_metric;
+options.verbose = 1;
 
 %Norm constraint
-free_vars = [prog.coneVar; prog.freeVar];
+free_vars = [prog.coneVar(2:end); prog.freeVar];
 len = length(free_vars);
 [prog, a] = prog.newPos(len);
 prog = prog.withPos(-free_vars + a);
 prog = prog.withPos(free_vars + a);
 
 try
-    SOS_soln = prog.minimize(trace(W_scale*W_upper)+ (1e-4)*sum(a), @spot_mosek, options);
+    SOS_soln = prog.minimize(trace(W_scale*W_upper) + norm_scale*sum(a), @spot_mosek, options);
 catch
     %failed
     solved = 1;
@@ -161,9 +164,18 @@ if (return_metric)
         disp('feasible, getting results...');
 
         W_sol = zeros(n,n,length(w_poly));
+        NNZ_list = zeros(length(w_poly),1);
         for i = 1:length(w_poly)
             W_sol(:,:,i) = clean(double(SOS_soln.eval(W_list{i})),1e-3);
+            if sum(sum(abs(W_sol(:,:,i)))) > 0
+                NNZ_list(i) = 1;
+            end
         end
+        w_poly = w_poly(find(NNZ_list));
+        W_sol = W_sol(:,:,find(NNZ_list));
+        
+        fprintf('%d non-zero monomials\n',length(w_poly));
+        
         
         dw_poly_p = diff(w_poly,x(3));
         dw_poly_vy = diff(w_poly,x(4));
@@ -190,7 +202,7 @@ if (return_metric)
 
         %% Execute
         eval(W_exec);
-        save('metric_PVTOL_vectorized.mat','W_eval','w_poly_fnc','dw_poly_p_fnc','dw_poly_vy_fnc','W_upper');
+        save('metric_PVTOL_vectorized_3.mat','W_eval','w_poly_fnc','dw_poly_p_fnc','dw_poly_vy_fnc','W_upper');
     end
 end
 end

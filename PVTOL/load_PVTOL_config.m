@@ -116,15 +116,3 @@ test_state = [-4.4;
                0;
                0];
 
-%% Initialize sampling-based planner
-% FMT_V = generate_sample_set_2D(state_constr(1,2),state_constr(2,2),x_eq(1:2),sqrt(alpha/2.5),1000,5,adapt_EPS);
-load('FMT_V.mat');
-
-% figure()
-% hold on
-% for i = 1:5:length(FMT_V)
-%     for j = 1:length(FMT_V(i).N)
-%        line([FMT_V(i).coord(1), FMT_V(FMT_V(i).N(j)).coord(1)],...
-%             [FMT_V(i).coord(2), FMT_V(FMT_V(i).N(j)).coord(2)]);
-%     end
-% end

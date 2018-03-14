@@ -19,7 +19,7 @@ u_U = u_con(:,2);
 K = N;
 
 %CGL nodes
-[s_t,w] = clencurt(K); %t_t: [-1, 1] : <-> : [0, Tp]
+[s_t,w] = clencurt(K); %s_t: [-1, 1] : <-> : [0, Tp]
 s = fliplr(s_t); %t: [1, -1]
 
 %% Final solution interpolation matrix

@@ -29,6 +29,8 @@ s_e_full = (2*tau_full - Tp)/Tp; %[-1, 1]
 
 %Lagrange polynomial evaluation at the interpolation points
 % L_e = compute_Lagrange(length(s_e)-1,N,s_e,s_t);
+
+%Evaluation at full grid (finer than collocation grid)
 L_e_full = compute_Lagrange(length(s_e_full)-1,N,s_e_full,s_t);
 
 %% Get Differentiation matrix
@@ -44,8 +46,6 @@ D = kron(D,eye(n));
 % n_vars = (N+1)*(n+m);
 
 %% Define problem
-
-% u_eq = zeros(m,1);
 
 x_eq_all = kron(ones(N+1,1),x_eq);
 u_eq_all = kron(ones(N+1,1),u_eq);
