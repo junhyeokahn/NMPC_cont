@@ -1,11 +1,3 @@
-
-% close all
-
-if strcmp(select_path,'ad')
-    MP_state = MP_ad_state;
-    MP_ctrl = MP_ad_ctrl;
-end
-
 figure(1); 
 hold on
 %Obstacles
